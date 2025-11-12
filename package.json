@@ -1,12 +1,13 @@
 {
   "name": "mon_regime_ia_gratuite",
   "version": "1.0.0",
-  "description": "Petit serveur local pour Mon Regime \u2014 utilise Hugging Face inference (gratuit si accessible)",
+  "description": "Petit serveur local pour Mon Regime — utilise Hugging Face inference (gratuit si accessible)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
+    "dotenv": "^17.2.3",
     "express": "^4.18.2",
     "node-fetch": "^2.6.7"
   }
