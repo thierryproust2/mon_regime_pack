@@ -1,0 +1,2085 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🥗 Mon Régime - Planificateur de Repas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #10b981;
+            --secondary: #3b82f6;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --purple: #8b5cf6;
+            --dark: #1f2937;
+            --light: #f3f4f6;
+            --white: #ffffff;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--dark);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: var(--white);
+            border-radius: 20px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            padding: 20px 30px;
+            background: var(--light);
+            flex-wrap: wrap;
+            align-items: center;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: var(--shadow);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-secondary { background: var(--secondary); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-purple { background: var(--purple); color: white; }
+        .btn-small { padding: 8px 16px; font-size: 0.85em; }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 0;
+            min-height: 600px;
+        }
+
+        .sidebar {
+            background: #f9fafb;
+            padding: 20px;
+            border-right: 2px solid #e5e7eb;
+            overflow-y: auto;
+            max-height: 800px;
+        }
+
+        .sidebar h3 {
+            margin-bottom: 15px;
+            color: var(--dark);
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .category-filter {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .category-btn {
+            padding: 6px 12px;
+            border: 2px solid #e5e7eb;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.3s;
+        }
+
+        .category-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .aliment-item {
+            background: white;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            cursor: move;
+            transition: all 0.3s;
+            border: 2px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .aliment-item:hover {
+            transform: translateX(5px);
+            border-color: var(--primary);
+            box-shadow: var(--shadow);
+        }
+
+        .aliment-item.in-stock {
+            border-color: var(--primary);
+            background: #d1fae5;
+        }
+
+        .aliment-item.in-wishlist {
+            border-color: var(--purple);
+            background: #ede9fe;
+        }
+
+        .aliment-item.dragging {
+            opacity: 0.5;
+        }
+
+        .aliment-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .aliment-name {
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        .aliment-calories {
+            color: #6b7280;
+            font-size: 0.85em;
+        }
+
+        .stock-badge {
+            background: var(--primary);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        .wishlist-badge {
+            background: var(--purple);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        .calendar {
+            padding: 30px;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .day-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 15px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .day-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-5px);
+        }
+
+        .day-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            font-weight: 600;
+            font-size: 1.1em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .day-total {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .meal-section {
+            padding: 15px;
+            border-bottom: 1px solid #e5e7eb;
+            position: relative;
+        }
+
+        .meal-section:last-child {
+            border-bottom: none;
+        }
+
+        .meal-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--dark);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .meal-calories {
+            color: var(--primary);
+            font-size: 0.9em;
+        }
+
+        .recipe-hint-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: var(--purple);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: all 0.3s;
+        }
+
+        .recipe-hint-btn:hover {
+            background: #7c3aed;
+            transform: scale(1.05);
+        }
+
+        .drop-zone {
+            min-height: 80px;
+            border: 2px dashed #d1d5db;
+            border-radius: 10px;
+            padding: 10px;
+            background: #f9fafb;
+            transition: all 0.3s;
+        }
+
+        .drop-zone.drag-over {
+            border-color: var(--primary);
+            background: #d1fae5;
+        }
+
+        .meal-item {
+            background: white;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #e5e7eb;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .meal-item-info {
+            flex: 1;
+        }
+
+        .meal-item-name {
+            font-weight: 500;
+            font-size: 0.9em;
+        }
+
+        .meal-item-details {
+            font-size: 0.8em;
+            color: #6b7280;
+        }
+
+        .remove-btn {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: all 0.3s;
+        }
+
+        .remove-btn:hover {
+            background: #dc2626;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            color: var(--dark);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #6b7280;
+            transition: color 0.3s;
+        }
+
+        .close-btn:hover {
+            color: var(--danger);
+        }
+
+        .stock-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .stock-item {
+            background: var(--light);
+            padding: 12px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stock-item-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .add-stock-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .add-stock-form select,
+        .add-stock-form input {
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+
+        .add-stock-form select {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .add-stock-form input {
+            width: 100px;
+        }
+
+        .shopping-list {
+            list-style: none;
+        }
+
+        .shopping-item {
+            padding: 12px;
+            background: var(--light);
+            margin-bottom: 8px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            opacity: 0.9;
+        }
+
+        .recipe-card {
+            background: var(--light);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            border: 2px solid #e5e7eb;
+        }
+
+        .recipe-card h4 {
+            color: var(--dark);
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .recipe-meta {
+            display: flex;
+            gap: 15px;
+            margin: 10px 0;
+            color: #6b7280;
+            flex-wrap: wrap;
+        }
+
+        .recipe-ingredients {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+
+        .recipe-ingredients h5 {
+            margin-bottom: 8px;
+            color: var(--primary);
+        }
+
+        .recipe-steps {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .recipe-steps h5 {
+            margin-bottom: 8px;
+            color: var(--secondary);
+        }
+
+        .recipe-steps ol {
+            padding-left: 20px;
+        }
+
+        .recipe-steps li {
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+
+        .recipe-tip {
+            background: #fef3c7;
+            border-left: 4px solid var(--warning);
+            padding: 12px;
+            margin-top: 10px;
+            border-radius: 8px;
+        }
+
+        .recipe-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .recipe-suggestion {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .recipe-suggestion:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow);
+            transform: translateY(-3px);
+        }
+
+        .recipe-suggestion h4 {
+            color: var(--dark);
+            margin-bottom: 8px;
+        }
+
+        .recipe-tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .recipe-tag {
+            background: var(--light);
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            color: #6b7280;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                max-height: 400px;
+            }
+
+            .calendar-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .toolbar {
+                justify-content: center;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .btn {
+                font-size: 0.85em;
+                padding: 10px 16px;
+            }
+
+            .recipe-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #9ca3af;
+            padding: 20px;
+            font-style: italic;
+        }
+
+        .batch-cooking-banner {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .batch-cooking-banner .icon {
+            font-size: 2em;
+        }
+
+        .quick-filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-chip {
+            padding: 8px 16px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9em;
+        }
+
+        .filter-chip:hover {
+            border-color: var(--primary);
+            background: #d1fae5;
+        }
+
+        .filter-chip.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+     </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🥗 Mon Régime</h1>
+            <p>Planifiez vos repas avec votre stock et vos envies</p>
+        </div>
+
+        <div class="toolbar">
+            <button class="btn btn-purple" onclick="ouvrirStock()">🏠 Mon Stock</button>
+            <button class="btn btn-purple" onclick="ouvrirEnvies()">💭 Mes Envies</button>
+            <button class="btn btn-primary" onclick="genererMenuEquilibre()">🎲 Menu Équilibré</button>
+            <button class="btn btn-secondary" onclick="afficherListeCourses()">🛒 Liste de Courses</button>
+            <button class="btn btn-warning" onclick="afficherStatistiques()">📊 Statistiques</button>
+            <button class="btn btn-purple" onclick="ouvrirRecettes()">👨‍🍳 Idées Recettes</button>
+            <button class="btn btn-danger" onclick="reinitialiserMenus()">🧹 Réinitialiser</button>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <h3>🍽️ Aliments disponibles</h3>
+                <input type="text" class="search-box" id="searchBox" placeholder="🔍 Rechercher un aliment..." onkeyup="filtrerAliments()">
+                
+                <div class="category-filter" id="categoryFilter"></div>
+                
+                <div id="alimentsList"></div>
+            </div>
+
+            <div class="calendar">
+                <div class="calendar-grid" id="calendarGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Stock -->
+    <div class="modal" id="stockModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🏠 Mon Stock (Frigo & Placards)</h2>
+                <button class="close-btn" onclick="fermerModal('stockModal')">×</button>
+            </div>
+            
+            <div class="add-stock-form">
+                <select id="alimentStockSelect"></select>
+                <input type="number" id="quantiteStock" placeholder="Quantité" value="1" min="1">
+                <button class="btn btn-primary" onclick="ajouterAuStock()">+ Ajouter</button>
+            </div>
+            
+            <div class="stock-list" id="stockList"></div>
+        </div>
+    </div>
+
+    <!-- Modal Envies -->
+    <div class="modal" id="enviesModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>💭 Mes Envies de la Semaine</h2>
+                <button class="close-btn" onclick="fermerModal('enviesModal')">×</button>
+            </div>
+            
+            <div class="add-stock-form">
+                <select id="alimentEnvieSelect"></select>
+                <button class="btn btn-purple" onclick="ajouterAuxEnvies()">+ Ajouter</button>
+            </div>
+            
+            <div class="stock-list" id="enviesList"></div>
+        </div>
+    </div>
+
+    <!-- Modal Liste de Courses -->
+    <div class="modal" id="shoppingModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🛒 Liste de Courses</h2>
+                <button class="close-btn" onclick="fermerModal('shoppingModal')">×</button>
+            </div>
+            <ul class="shopping-list" id="shoppingList"></ul>
+            <button class="btn btn-primary" onclick="exporterPDF()" style="width: 100%; margin-top: 20px;">📄 Exporter</button>
+        </div>
+    </div>
+
+    <!-- Modal Statistiques -->
+    <div class="modal" id="statsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📊 Statistiques Nutritionnelles</h2>
+                <button class="close-btn" onclick="fermerModal('statsModal')">×</button>
+            </div>
+            <div class="stats-grid" id="statsGrid"></div>
+            <div id="detailsStats"></div>
+        </div>
+    </div>
+
+    <!-- Modal Recettes -->
+    <div class="modal" id="recettesModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>👨‍🍳 Idées de Recettes Pratiques</h2>
+                <button class="close-btn" onclick="fermerModal('recettesModal')">×</button>
+            </div>
+
+            <div class="batch-cooking-banner">
+                <div class="icon">⏱️</div>
+                <div>
+                    <strong style="font-size: 1.1em;">Batch Cooking - Cuisinez Malin !</strong>
+                    <p style="margin-top: 5px; opacity: 0.9;">Préparez plusieurs repas en une fois et gagnez du temps toute la semaine</p>
+                </div>
+            </div>
+
+            <div class="quick-filters">
+                <button class="filter-chip active" onclick="filtrerRecettes('tous')" data-filter="tous">🍽️ Toutes</button>
+                <button class="filter-chip" onclick="filtrerRecettes('rapide')" data-filter="rapide">⚡ Rapides (- 15min)</button>
+                <button class="filter-chip" onclick="filtrerRecettes('facile')" data-filter="facile">👍 Faciles</button>
+                <button class="filter-chip" onclick="filtrerRecettes('batch')" data-filter="batch">⏱️ Batch Cooking</button>
+                <button class="filter-chip" onclick="filtrerRecettes('economique')" data-filter="economique">💰 Économiques</button>
+            </div>
+
+            <div id="recettesContent"></div>
+        </div>
+    </div>
+
+    <!-- Modal Détail Recette -->
+    <div class="modal" id="recetteDetailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="recetteDetailTitre"></h2>
+                <button class="close-btn" onclick="fermerModal('recetteDetailModal')">×</button>
+            </div>
+            <div id="recetteDetailContent"></div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        const ALIMENTS = {
+            "abricot": {emoji: "🍑", calories: 48, quantite: 100, unite: "g", categorie: "Fruits"},
+            "agneau": {emoji: "🍖", calories: 250, quantite: 100, unite: "g", categorie: "Viandes"},
+            "ail": {emoji: "🧄", calories: 13, quantite: 10, unite: "g", categorie: "Aromates"},
+            "amandes": {emoji: "🌰", calories: 580, quantite: 30, unite: "g", categorie: "Fruits à coque"},
+            "ananas": {emoji: "🍍", calories: 50, quantite: 150, unite: "g", categorie: "Fruits"},
+            "artichaut": {emoji: "🌿", calories: 47, quantite: 150, unite: "g", categorie: "Légumes"},
+            "asperge": {emoji: "🥬", calories: 20, quantite: 100, unite: "g", categorie: "Légumes"},
+            "aubergine": {emoji: "🍆", calories: 25, quantite: 150, unite: "g", categorie: "Légumes"},
+            "avocat": {emoji: "🥑", calories: 160, quantite: 100, unite: "g", categorie: "Fruits"},
+            "banane": {emoji: "🍌", calories: 89, quantite: 100, unite: "g", categorie: "Fruits"},
+            "bœuf": {emoji: "🥩", calories: 250, quantite: 100, unite: "g", categorie: "Viandes"},
+            "brocoli": {emoji: "🥦", calories: 34, quantite: 100, unite: "g", categorie: "Légumes"},
+            "cabillaud": {emoji: "🐟", calories: 82, quantite: 120, unite: "g", categorie: "Poissons"},
+            "café": {emoji: "☕", calories: 2, quantite: 200, unite: "ml", categorie: "Boissons"},
+            "carotte": {emoji: "🥕", calories: 40, quantite: 100, unite: "g", categorie: "Légumes"},
+            "champignons": {emoji: "🍄", calories: 22, quantite: 100, unite: "g", categorie: "Légumes"},
+            "chocolat noir": {emoji: "🍫", calories: 546, quantite: 20, unite: "g", categorie: "Produits sucrés"},
+            "chou-fleur": {emoji: "🥬", calories: 25, quantite: 150, unite: "g", categorie: "Légumes"},
+            "citron": {emoji: "🍋", calories: 29, quantite: 60, unite: "g", categorie: "Fruits"},
+            "concombre": {emoji: "🥒", calories: 12, quantite: 100, unite: "g", categorie: "Légumes"},
+            "courgette": {emoji: "🥒", calories: 17, quantite: 150, unite: "g", categorie: "Légumes"},
+            "crevettes": {emoji: "🦐", calories: 90, quantite: 100, unite: "g", categorie: "Poissons"},
+            "dinde": {emoji: "🦃", calories: 140, quantite: 150, unite: "g", categorie: "Viandes"},
+            "épinards": {emoji: "🥬", calories: 23, quantite: 100, unite: "g", categorie: "Légumes"},
+            "fraise": {emoji: "🍓", calories: 33, quantite: 100, unite: "g", categorie: "Fruits"},
+            "fromage blanc": {emoji: "🥛", calories: 75, quantite: 100, unite: "g", categorie: "Produits laitiers"},
+            "haricot vert": {emoji: "🫛", calories: 31, quantite: 100, unite: "g", categorie: "Légumes"},
+            "kiwi": {emoji: "🥝", calories: 61, quantite: 100, unite: "g", categorie: "Fruits"},
+            "lait demi-écrémé": {emoji: "🥛", calories: 49, quantite: 200, unite: "ml", categorie: "Boissons"},
+            "lentilles": {emoji: "🫘", calories: 116, quantite: 80, unite: "g", categorie: "Légumineuses"},
+            "mangue": {emoji: "🥭", calories: 60, quantite: 150, unite: "g", categorie: "Fruits"},
+            "œuf": {emoji: "🥚", calories: 145, quantite: 60, unite: "g", categorie: "Œufs"},
+            "oignon": {emoji: "🧅", calories: 40, quantite: 80, unite: "g", categorie: "Légumes"},
+            "orange": {emoji: "🍊", calories: 47, quantite: 150, unite: "g", categorie: "Fruits"},
+            "pain complet": {emoji: "🍞", calories: 247, quantite: 50, unite: "g", categorie: "Féculents"},
+            "pâtes": {emoji: "🍝", calories: 371, quantite: 80, unite: "g", categorie: "Féculents"},
+            "poire": {emoji: "🍐", calories: 57, quantite: 150, unite: "g", categorie: "Fruits"},
+            "poireau": {emoji: "🥬", calories: 61, quantite: 150, unite: "g", categorie: "Légumes"},
+            "poivron": {emoji: "🫑", calories: 20, quantite: 100, unite: "g", categorie: "Légumes"},
+            "pomme": {emoji: "🍎", calories: 52, quantite: 150, unite: "g", categorie: "Fruits"},
+            "pomme de terre": {emoji: "🥔", calories: 77, quantite: 150, unite: "g", categorie: "Légumes"},
+            "poulet": {emoji: "🍗", calories: 239, quantite: 150, unite: "g", categorie: "Viandes"},
+            "quinoa": {emoji: "🌾", calories: 368, quantite: 60, unite: "g", categorie: "Féculents"},
+            "raisin": {emoji: "🍇", calories: 69, quantite: 100, unite: "g", categorie: "Fruits"},
+            "riz": {emoji: "🍚", calories: 130, quantite: 150, unite: "g", categorie: "Féculents"},
+            "salade": {emoji: "🥗", calories: 15, quantite: 100, unite: "g", categorie: "Légumes"},
+            "saumon": {emoji: "🐟", calories: 208, quantite: 120, unite: "g", categorie: "Poissons"},
+            "thon": {emoji: "🐟", calories: 144, quantite: 100, unite: "g", categorie: "Poissons"},
+            "tomate": {emoji: "🍅", calories: 18, quantite: 150, unite: "g", categorie: "Légumes"},
+            "yaourt nature": {emoji: "🥛", calories: 61, quantite: 125, unite: "g", categorie: "Produits laitiers"}
+        };
+        // Base de recettes pratiques
+        const RECETTES = [
+            {
+                id: "poulet-roti-legumes",
+                titre: "Poulet rôti et légumes",
+                ingredients: ["poulet", "carotte", "pomme de terre", "oignon"],
+                temps: "1h",
+                difficulte: "Facile",
+                portions: 4,
+                tags: ["batch", "economique"],
+                etapes: [
+                    "Préchauffez le four à 200°C",
+                    "Assaisonnez le poulet avec sel, poivre et herbes",
+                    "Coupez les légumes en gros morceaux",
+                    "Disposez le tout dans un plat, arrosez d'huile d'olive",
+                    "Enfournez 50-60 minutes en arrosant régulièrement"
+                ],
+                conseil: "💡 Préparez-en plus : le poulet froid est parfait en salade le lendemain !"
+            },
+            {
+                id: "pates-saumon-courgette",
+                titre: "Pâtes au saumon et courgettes",
+                ingredients: ["pâtes", "saumon", "courgette", "citron"],
+                temps: "20min",
+                difficulte: "Facile",
+                portions: 2,
+                tags: ["rapide", "facile"],
+                etapes: [
+                    "Faites cuire les pâtes selon les instructions",
+                    "Coupez les courgettes en rondelles et faites-les revenir",
+                    "Ajoutez le saumon en morceaux",
+                    "Mélangez avec les pâtes égouttées",
+                    "Ajoutez un filet de citron et servez"
+                ],
+                conseil: "⚡ Ultra rapide et équilibré, parfait pour les soirs pressés !"
+            },
+            {
+                id: "omelette-legumes",
+                titre: "Omelette aux légumes",
+                ingredients: ["œuf", "tomate", "poivron", "oignon"],
+                temps: "15min",
+                difficulte: "Très facile",
+                portions: 1,
+                tags: ["rapide", "facile", "economique"],
+                etapes: [
+                    "Coupez les légumes en petits dés",
+                    "Faites-les revenir 5 minutes dans une poêle",
+                    "Battez 2-3 œufs et versez sur les légumes",
+                    "Cuisez à feu doux jusqu'à ce que l'omelette soit prise",
+                    "Pliez et servez chaud"
+                ],
+                conseil: "👍 Idéal pour utiliser les restes de légumes du frigo !"
+            },
+            {
+                id: "salade-composee",
+                titre: "Salade complète",
+                ingredients: ["salade", "tomate", "thon", "œuf", "avocat"],
+                temps: "10min",
+                difficulte: "Très facile",
+                portions: 2,
+                tags: ["rapide", "facile"],
+                etapes: [
+                    "Lavez et essorez la salade",
+                    "Coupez les tomates en quartiers",
+                    "Ajoutez le thon égoutté",
+                    "Ajoutez les œufs durs coupés et l'avocat en tranches",
+                    "Assaisonnez avec vinaigrette"
+                ],
+                conseil: "⚡ Repas complet prêt en 10 minutes, idéal l'été !"
+            },
+            {
+                id: "riz-poulet-curry",
+                titre: "Riz au poulet et curry",
+                ingredients: ["riz", "poulet", "carotte", "oignon"],
+                temps: "30min",
+                difficulte: "Facile",
+                portions: 4,
+                tags: ["batch", "economique"],
+                etapes: [
+                    "Faites cuire le riz selon les instructions",
+                    "Coupez le poulet en morceaux et faites-le dorer",
+                    "Ajoutez les légumes coupés en dés",
+                    "Saupoudrez de curry, ajoutez un peu d'eau",
+                    "Laissez mijoter 15 minutes et servez avec le riz"
+                ],
+                conseil: "💡 Se conserve 3 jours au frigo, parfait pour les lunchs !"
+            },
+            {
+                id: "gratin-courgettes",
+                titre: "Gratin de courgettes",
+                ingredients: ["courgette", "fromage blanc", "œuf"],
+                temps: "40min",
+                difficulte: "Facile",
+                portions: 4,
+                tags: ["batch", "economique"],
+                etapes: [
+                    "Coupez les courgettes en rondelles",
+                    "Faites-les revenir légèrement à la poêle",
+                    "Mélangez fromage blanc et œufs battus",
+                    "Disposez les courgettes dans un plat, versez la préparation",
+                    "Enfournez 30 minutes à 180°C"
+                ],
+                conseil: "🍽️ Délicieux chaud ou froid, se réchauffe facilement !"
+            },
+            {
+                id: "soupe-legumes",
+                titre: "Soupe de légumes maison",
+                ingredients: ["carotte", "poireau", "pomme de terre", "oignon"],
+                temps: "45min",
+                difficulte: "Très facile",
+                portions: 6,
+                tags: ["batch", "economique"],
+                etapes: [
+                    "Épluchez et coupez tous les légumes",
+                    "Faites revenir l'oignon dans un peu d'huile",
+                    "Ajoutez les autres légumes et couvrez d'eau",
+                    "Laissez mijoter 30 minutes",
+                    "Mixez si vous le souhaitez"
+                ],
+                conseil: "⏱️ Préparez-en une grande quantité, se congèle parfaitement !"
+            },
+            {
+                id: "poisson-papillote",
+                titre: "Poisson en papillote",
+                ingredients: ["cabillaud", "tomate", "citron", "courgette"],
+                temps: "25min",
+                difficulte: "Facile",
+                portions: 2,
+                tags: ["rapide", "facile"],
+                etapes: [
+                    "Coupez des légumes en fines rondelles",
+                    "Disposez le poisson sur du papier sulfurisé",
+                    "Ajoutez les légumes, citron, sel, poivre",
+                    "Fermez la papillote",
+                    "Enfournez 20 minutes à 180°C"
+                ],
+                conseil: "👍 Cuisson saine et sans matière grasse, zéro vaisselle !"
+            },
+            {
+                id: "quiche-legumes",
+                titre: "Quiche aux légumes",
+                ingredients: ["œuf", "fromage blanc", "courgette", "tomate"],
+                temps: "45min",
+                difficulte: "Facile",
+                portions: 6,
+                tags: ["batch", "economique"],
+                etapes: [
+                    "Étalez une pâte brisée dans un moule",
+                    "Faites revenir les légumes coupés",
+                    "Battez les œufs avec le fromage blanc",
+                    "Disposez les légumes, versez la préparation",
+                    "Enfournez 35 minutes à 180°C"
+                ],
+                conseil: "💡 Se mange chaude ou froide, parfaite pour les pique-niques !"
+            },
+            {
+                id: "lentilles-legumes",
+                titre: "Lentilles aux légumes",
+                ingredients: ["lentilles", "carotte", "oignon", "tomate"],
+                temps: "35min",
+                difficulte: "Très facile",
+                portions: 4,
+                tags: ["batch", "economique"],
+                etapes: [
+                    "Rincez les lentilles",
+                    "Faites revenir l'oignon et les carottes coupées",
+                    "Ajoutez les lentilles et couvrez d'eau",
+                    "Ajoutez les tomates coupées",
+                    "Laissez mijoter 25 minutes"
+                ],
+                conseil: "⏱️ Riche en protéines végétales, se réchauffe parfaitement !"
+            },
+            {
+                id: "salade-riz-thon",
+                titre: "Salade de riz au thon",
+                ingredients: ["riz", "thon", "tomate", "concombre"],
+                temps: "20min",
+                difficulte: "Très facile",
+                portions: 3,
+                tags: ["rapide", "facile", "batch"],
+                etapes: [
+                    "Faites cuire le riz et laissez refroidir",
+                    "Coupez les légumes en petits dés",
+                    "Mélangez avec le thon égoutté",
+                    "Assaisonnez avec vinaigrette",
+                    "Réservez au frais"
+                ],
+                conseil: "🍱 Parfait à préparer la veille pour les lunchs !"
+            },
+            {
+                id: "brocoli-vapeur-poulet",
+                titre: "Brocoli vapeur et poulet grillé",
+                ingredients: ["brocoli", "poulet", "ail", "citron"],
+                temps: "20min",
+                difficulte: "Très facile",
+                portions: 2,
+                tags: ["rapide", "facile"],
+                etapes: [
+                    "Faites cuire le brocoli à la vapeur 10 minutes",
+                    "Grillez le poulet assaisonné à la poêle",
+                    "Préparez une sauce ail-citron",
+                    "Servez le tout ensemble",
+                    "Arrosez de la sauce"
+                ],
+                conseil: "⚡ Repas sain et rapide, riche en protéines !"
+            }
+        ];
+
+        const JOURS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+        const REPAS = ["Petit déjeuner", "Déjeuner", "Dîner"];
+
+        let menus = {};
+        let stock = {};
+        let envies = [];
+        let selectedCategory = "Tous";
+        let recettesSemaine = {};
+        let recettesJour = {};
+
+        function initialiser() {
+            JOURS.forEach(jour => {
+                menus[jour] = {};
+                REPAS.forEach(repas => {
+                    menus[jour][repas] = [];
+                });
+            });
+
+            chargerDepuisLocalStorage();
+            afficherCategories();
+            afficherAliments();
+            afficherCalendrier();
+            remplirSelectsAliments();
+        }
+
+        function remplirSelectsAliments() {
+            const selectStock = document.getElementById('alimentStockSelect');
+            const selectEnvie = document.getElementById('alimentEnvieSelect');
+            
+            const options = Object.keys(ALIMENTS).sort().map(nom => 
+                `<option value="${nom}">${ALIMENTS[nom].emoji} ${nom.charAt(0).toUpperCase() + nom.slice(1)}</option>`
+            ).join('');
+            
+            selectStock.innerHTML = '<option value="">Choisir un aliment...</option>' + options;
+            selectEnvie.innerHTML = '<option value="">Choisir un aliment...</option>' + options;
+        }
+
+        function remplirSelectJoursRepas() {
+            const selectJour = document.getElementById('jourRecetteSelect');
+            const selectRepas = document.getElementById('repasRecetteSelect');
+            
+            selectJour.innerHTML = '<option value="">Choisir un jour...</option>' + 
+                JOURS.map(j => `<option value="${j}">${j}</option>`).join('');
+            
+            selectRepas.innerHTML = '<option value="">Choisir un repas...</option>' + 
+                REPAS.map(r => `<option value="${r}">${r}</option>`).join('');
+        }
+
+        function ajouterAuStock() {
+            const select = document.getElementById('alimentStockSelect');
+            const quantiteInput = document.getElementById('quantiteStock');
+            const aliment = select.value;
+            const quantite = parseInt(quantiteInput.value);
+
+            if (!aliment || !quantite) {
+                alert('Veuillez choisir un aliment et une quantité');
+                return;
+            }
+
+            stock[aliment] = (stock[aliment] || 0) + quantite;
+            afficherStock();
+            afficherAliments();
+            sauvegarderDansLocalStorage();
+            quantiteInput.value = '1';
+        }
+
+        function ajouterAuxEnvies() {
+            const select = document.getElementById('alimentEnvieSelect');
+            const aliment = select.value;
+
+            if (!aliment) {
+                alert('Veuillez choisir un aliment');
+                return;
+            }
+
+            if (!envies.includes(aliment)) {
+                envies.push(aliment);
+                afficherEnvies();
+                afficherAliments();
+                sauvegarderDansLocalStorage();
+            }
+        }
+
+        function retirerDuStock(aliment) {
+            delete stock[aliment];
+            afficherStock();
+            afficherAliments();
+            sauvegarderDansLocalStorage();
+        }
+
+        function retirerDesEnvies(aliment) {
+            envies = envies.filter(a => a !== aliment);
+            afficherEnvies();
+            afficherAliments();
+            sauvegarderDansLocalStorage();
+        }
+
+        function afficherStock() {
+            const container = document.getElementById('stockList');
+            if (Object.keys(stock).length === 0) {
+                container.innerHTML = '<div class="empty-state">Aucun aliment en stock</div>';
+                return;
+            }
+
+            container.innerHTML = Object.entries(stock).map(([nom, quantite]) => {
+                const aliment = ALIMENTS[nom];
+                return `
+                    <div class="stock-item">
+                        <div class="stock-item-info">
+                            <span style="font-size: 1.5em;">${aliment.emoji}</span>
+                            <div>
+                                <div style="font-weight: 600;">${nom.charAt(0).toUpperCase() + nom.slice(1)}</div>
+                                <div style="font-size: 0.85em; color: #6b7280;">${quantite} × ${aliment.quantite}${aliment.unite}</div>
+                            </div>
+                        </div>
+                        <button class="remove-btn" onclick="retirerDuStock('${nom}')">✕</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function afficherEnvies() {
+            const container = document.getElementById('enviesList');
+            if (envies.length === 0) {
+                container.innerHTML = '<div class="empty-state">Aucune envie ajoutée</div>';
+                return;
+            }
+
+            container.innerHTML = envies.map(nom => {
+                const aliment = ALIMENTS[nom];
+                return `
+                    <div class="stock-item">
+                        <div class="stock-item-info">
+                            <span style="font-size: 1.5em;">${aliment.emoji}</span>
+                            <div style="font-weight: 600;">${nom.charAt(0).toUpperCase() + nom.slice(1)}</div>
+                        </div>
+                        <button class="remove-btn" onclick="retirerDesEnvies('${nom}')">✕</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function afficherCategories() {
+            const categories = ["Tous", ...new Set(Object.values(ALIMENTS).map(a => a.categorie))];
+            const container = document.getElementById('categoryFilter');
+            container.innerHTML = categories.map(cat => 
+                `<button class="category-btn ${cat === selectedCategory ? 'active' : ''}" onclick="filtrerParCategorie('${cat}')">${cat}</button>`
+            ).join('');
+        }
+
+        function filtrerParCategorie(categorie) {
+            selectedCategory = categorie;
+            afficherCategories();
+            afficherAliments();
+        }
+
+        function filtrerAliments() {
+            afficherAliments();
+        }
+
+        function afficherAliments() {
+            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+            const container = document.getElementById('alimentsList');
+            
+            const alimentsFiltres = Object.entries(ALIMENTS).filter(([nom, data]) => {
+                const matchSearch = nom.toLowerCase().includes(searchTerm);
+                const matchCategory = selectedCategory === "Tous" || data.categorie === selectedCategory;
+                return matchSearch && matchCategory;
+            });
+
+            container.innerHTML = alimentsFiltres.map(([nom, data]) => {
+                const inStock = stock[nom] > 0;
+                const inWishlist = envies.includes(nom);
+                const classes = ['aliment-item'];
+                if (inStock) classes.push('in-stock');
+                if (inWishlist) classes.push('in-wishlist');
+
+                return `
+                    <div class="${classes.join(' ')}" draggable="true" ondragstart="drag(event)" data-aliment="${nom}">
+                        <div class="aliment-info">
+                            <div class="aliment-name">${data.emoji} ${nom.charAt(0).toUpperCase() + nom.slice(1)}</div>
+                            <div class="aliment-calories">${data.calories} kcal • ${data.quantite}${data.unite}</div>
+                        </div>
+                        ${inStock ? '<span class="stock-badge">Stock</span>' : ''}
+                        ${inWishlist ? '<span class="wishlist-badge">Envie</span>' : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function afficherCalendrier() {
+            const container = document.getElementById('calendarGrid');
+            container.innerHTML = JOURS.map(jour => {
+                const totalJour = calculerTotalJour(jour);
+                return `
+                    <div class="day-card">
+                        <div class="day-header">
+                            <span>${jour}</span>
+                            <span class="day-total">${totalJour} kcal</span>
+                        </div>
+                        ${REPAS.map(repas => {
+                            const totalRepas = calculerTotalRepas(jour, repas);
+                            return `
+                                <div class="meal-section">
+								<button class="recipe-hint-btn" onclick="genRecetteIA('` + jour + `','` + repas + `')">
+                                ⭐ Recette IA
+                                    </button>
+                                    <div class="meal-title">
+									<button class="recipe-hint-btn" onclick="genRecetteIA('` + jour + `','` + repas + `')">
+                                ⭐ Recette IA
+                                    </button>
+                                        <span>${repas === "Petit déjeuner" ? "🌅" : repas === "Déjeuner" ? "☀️" : "🌙"} ${repas}</span>
+                                        <span class="meal-calories">${totalRepas} kcal</span>
+										<button class="recipe-hint-btn" onclick="genRecetteIA('` + jour + `','` + repas + `')">
+                                ⭐ Recette IA
+                                    </button>
+                                    </div>
+                                    <div class="drop-zone" 
+                                         ondrop="drop(event)" 
+                                         ondragover="allowDrop(event)"
+                                         ondragleave="dragLeave(event)"
+                                         data-jour="${jour}" 
+                                         data-repas="${repas}">
+                                        ${afficherRepas(jour, repas)}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function afficherRepas(jour, repas) {
+            const items = menus[jour][repas];
+            if (items.length === 0) {
+                return '<div class="empty-state">Glissez des aliments ici</div>';
+            }
+            return items.map((item, index) => {
+                const aliment = ALIMENTS[item.nom];
+                const calories = Math.round(item.quantite / aliment.quantite * aliment.calories);
+                return `
+                    <div class="meal-item">
+                        <div class="meal-item-info">
+                            <div class="meal-item-name">${aliment.emoji} ${item.nom.charAt(0).toUpperCase() + item.nom.slice(1)}</div>
+                            <div class="meal-item-details">${item.quantite}${aliment.unite} • ${calories} kcal</div>
+                        </div>
+                        <button class="remove-btn" onclick="retirerAliment('${jour}', '${repas}', ${index})">✕</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function drag(ev) {
+            ev.dataTransfer.setData("aliment", ev.target.dataset.aliment);
+            ev.target.classList.add('dragging');
+        }
+
+        function allowDrop(ev) {
+            ev.preventDefault();
+            ev.target.closest('.drop-zone').classList.add('drag-over');
+        }
+
+        function dragLeave(ev) {
+            ev.target.closest('.drop-zone').classList.remove('drag-over');
+        }
+
+        function drop(ev) {
+            ev.preventDefault();
+            const dropZone = ev.target.closest('.drop-zone');
+            dropZone.classList.remove('drag-over');
+            
+            const alimentNom = ev.dataTransfer.getData("aliment");
+            const jour = dropZone.dataset.jour;
+            const repas = dropZone.dataset.repas;
+            
+            const quantite = prompt(`Quantité pour ${alimentNom} (en ${ALIMENTS[alimentNom].unite}) :`, ALIMENTS[alimentNom].quantite);
+            
+            if (quantite && !isNaN(quantite)) {
+                menus[jour][repas].push({
+                    nom: alimentNom,
+                    quantite: parseInt(quantite)
+                });
+                afficherCalendrier();
+                sauvegarderDansLocalStorage();
+            }
+
+            document.querySelectorAll('.aliment-item').forEach(item => {
+                item.classList.remove('dragging');
+            });
+        }
+
+        function retirerAliment(jour, repas, index) {
+            menus[jour][repas].splice(index, 1);
+            afficherCalendrier();
+            sauvegarderDansLocalStorage();
+        }
+
+        function calculerTotalRepas(jour, repas) {
+            return menus[jour][repas].reduce((total, item) => {
+                const aliment = ALIMENTS[item.nom];
+                return total + Math.round(item.quantite / aliment.quantite * aliment.calories);
+            }, 0);
+        }
+
+        function calculerTotalJour(jour) {
+            return REPAS.reduce((total, repas) => total + calculerTotalRepas(jour, repas), 0);
+        }
+
+        function calculerTotalSemaine() {
+            return JOURS.reduce((total, jour) => total + calculerTotalJour(jour), 0);
+        }
+
+        function genererMenuEquilibre() {
+            if (!confirm('Cela va remplacer tous vos menus actuels. Continuer ?')) return;
+
+            const alimentsDispos = Object.keys(ALIMENTS);
+            
+            // Priorité au stock et aux envies
+            const alimentsPrioritaires = [
+                ...Object.keys(stock),
+                ...envies.filter(e => !stock[e])
+            ];
+
+            const proteines = alimentsDispos.filter(nom => 
+                ['Viandes', 'Poissons', 'Œufs'].includes(ALIMENTS[nom].categorie)
+            );
+            const feculents = alimentsDispos.filter(nom => 
+                ALIMENTS[nom].categorie === 'Féculents'
+            );
+            const legumes = alimentsDispos.filter(nom => 
+                ALIMENTS[nom].categorie === 'Légumes'
+            );
+            const fruits = alimentsDispos.filter(nom => 
+                ALIMENTS[nom].categorie === 'Fruits'
+            );
+
+            function choisirAliment(liste) {
+                const prioritaires = liste.filter(a => alimentsPrioritaires.includes(a));
+                if (prioritaires.length > 0) {
+                    return prioritaires[Math.floor(Math.random() * prioritaires.length)];
+                }
+                return liste[Math.floor(Math.random() * liste.length)];
+            }
+
+            JOURS.forEach(jour => {
+                menus[jour]["Petit déjeuner"] = [
+                    {nom: "café", quantite: 200},
+                    {nom: "pain complet", quantite: 50},
+                    {nom: "fromage blanc", quantite: 100}
+                ];
+
+                const proteineDej = choisirAliment(proteines);
+                const feculentDej = choisirAliment(feculents);
+                const legumeDej = choisirAliment(legumes);
+
+                menus[jour]["Déjeuner"] = [
+                    {nom: proteineDej, quantite: ALIMENTS[proteineDej].quantite},
+                    {nom: feculentDej, quantite: ALIMENTS[feculentDej].quantite},
+                    {nom: legumeDej, quantite: ALIMENTS[legumeDej].quantite}
+                ];
+
+                const proteineDin = choisirAliment(proteines);
+                const legumeDin = choisirAliment(legumes);
+                const fruitDin = choisirAliment(fruits);
+
+                menus[jour]["Dîner"] = [
+                    {nom: proteineDin, quantite: ALIMENTS[proteineDin].quantite},
+                    {nom: legumeDin, quantite: ALIMENTS[legumeDin].quantite},
+                    {nom: fruitDin, quantite: ALIMENTS[fruitDin].quantite}
+                ];
+            });
+
+            afficherCalendrier();
+            sauvegarderDansLocalStorage();
+            alert('✅ Menu équilibré généré en utilisant votre stock et vos envies !');
+        }
+
+        function suggererRecette(jour, repas) {
+            const ingredients = menus[jour][repas].map(item => item.nom);
+            const recettesTrouvees = RECETTES.filter(recette => {
+                return recette.ingredients.some(ing => ingredients.includes(ing));
+            });
+
+            if (recettesTrouvees.length > 0) {
+                const recette = recettesTrouvees[0];
+                afficherDetailRecette(recette);
+            } else {
+                alert('Aucune recette correspondante trouvée. Consultez toutes nos recettes dans "👨‍🍳 Idées Recettes" !');
+            }
+        }
+        function afficherListeCourses() {
+            const courses = {};
+
+            JOURS.forEach(jour => {
+                REPAS.forEach(repas => {
+                    menus[jour][repas].forEach(item => {
+                        if (courses[item.nom]) {
+                            courses[item.nom] += item.quantite;
+                        } else {
+                            courses[item.nom] = item.quantite;
+                        }
+                    });
+                });
+            });
+
+            // Soustraire ce qu'on a en stock
+            Object.keys(stock).forEach(aliment => {
+                if (courses[aliment]) {
+                    const alimentData = ALIMENTS[aliment];
+                    const quantiteEnStock = stock[aliment] * alimentData.quantite;
+                    courses[aliment] = Math.max(0, courses[aliment] - quantiteEnStock);
+                    if (courses[aliment] === 0) {
+                        delete courses[aliment];
+                    }
+                }
+            });
+
+            const container = document.getElementById('shoppingList');
+            const items = Object.entries(courses).sort((a, b) => a[0].localeCompare(b[0]));
+
+            if (items.length === 0) {
+                container.innerHTML = '<div class="empty-state">Tout est en stock ! 🎉</div>';
+            } else {
+                container.innerHTML = items.map(([nom, quantite]) => {
+                    const aliment = ALIMENTS[nom];
+                    return `
+                        <li class="shopping-item">
+                            <span>${aliment.emoji} ${nom.charAt(0).toUpperCase() + nom.slice(1)}</span>
+                            <strong>${quantite} ${aliment.unite}</strong>
+                        </li>
+                    `;
+                }).join('');
+            }
+
+            document.getElementById('shoppingModal').classList.add('active');
+        }
+
+        function afficherStatistiques() {
+            const totalSemaine = calculerTotalSemaine();
+            const moyenneJour = Math.round(totalSemaine / 7);
+            
+            const statsGrid = document.getElementById('statsGrid');
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${totalSemaine}</div>
+                    <div class="stat-label">Calories totales</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${moyenneJour}</div>
+                    <div class="stat-label">Moyenne par jour</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${Object.keys(stock).length}</div>
+                    <div class="stat-label">Aliments en stock</div>
+                </div>
+            `;
+
+            const detailsStats = document.getElementById('detailsStats');
+            detailsStats.innerHTML = `
+                <h3 style="margin-top: 20px; margin-bottom: 15px;">📅 Détail par jour</h3>
+                ${JOURS.map(jour => {
+                    const total = calculerTotalJour(jour);
+                    const pourcent = totalSemaine > 0 ? Math.round((total / totalSemaine) * 100) : 0;
+                    return `
+                        <div style="margin-bottom: 15px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <strong>${jour}</strong>
+                                <span>${total} kcal (${pourcent}%)</span>
+                            </div>
+                            <div style="background: #e5e7eb; height: 10px; border-radius: 5px; overflow: hidden;">
+                                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 100%; width: ${pourcent}%; transition: width 0.3s;"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            `;
+
+            document.getElementById('statsModal').classList.add('active');
+        }
+
+        function reinitialiserMenus() {
+            if (confirm('⚠️ Êtes-vous sûr de vouloir effacer tous les menus ?')) {
+                JOURS.forEach(jour => {
+                    REPAS.forEach(repas => {
+                        menus[jour][repas] = [];
+                    });
+                });
+                afficherCalendrier();
+                sauvegarderDansLocalStorage();
+                alert('✅ Tous les menus ont été réinitialisés');
+            }
+        }
+
+        function ouvrirStock() {
+            afficherStock();
+            document.getElementById('stockModal').classList.add('active');
+        }
+
+        function ouvrirEnvies() {
+            afficherEnvies();
+            document.getElementById('enviesModal').classList.add('active');
+        }
+
+        function ouvrirRecettes() {
+            document.getElementById('recettesModal').classList.add('active');
+        }
+
+        function changerOngletRecette(onglet) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            if (onglet === 'semaine') {
+                document.getElementById('recetteSemaine').classList.add('active');
+            } else {
+                document.getElementById('recetteJour').classList.add('active');
+            }
+        }
+
+        async function genererRecettesSemaine() {
+            const container = document.getElementById('recettesSemaineContent');
+            container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Génération des recettes en cours...</p></div>';
+
+            try {
+                for (const jour of JOURS) {
+                    for (const repas of REPAS) {
+                        if (menus[jour][repas].length > 0) {
+                            const recette = await genererRecette(jour, repas, menus[jour][repas]);
+                            if (!recettesSemaine[jour]) recettesSemaine[jour] = {};
+                            recettesSemaine[jour][repas] = recette;
+                        }
+                    }
+                }
+
+                afficherRecettesSemaine();
+                sauvegarderDansLocalStorage();
+            } catch (error) {
+                container.innerHTML = '<div class="empty-state">❌ Erreur lors de la génération des recettes</div>';
+            }
+        }
+
+        function afficherRecettesSemaine() {
+            const container = document.getElementById('recettesSemaineContent');
+            let html = '';
+
+            JOURS.forEach(jour => {
+                if (recettesSemaine[jour]) {
+                    html += `<h3 style="margin: 20px 0 15px 0; color: var(--primary);">${jour}</h3>`;
+                    REPAS.forEach(repas => {
+                        if (recettesSemaine[jour][repas]) {
+                            html += formaterRecette(recettesSemaine[jour][repas], `${jour} - ${repas}`);
+                        }
+                    });
+                }
+            });
+
+            container.innerHTML = html || '<div class="empty-state">Aucune recette générée</div>';
+        }
+
+        async function genererRecetteJour() {
+            const jour = document.getElementById('jourRecetteSelect').value;
+            const repas = document.getElementById('repasRecetteSelect').value;
+
+            if (!jour || !repas) {
+                alert('Veuillez choisir un jour et un repas');
+                return;
+            }
+
+            if (menus[jour][repas].length === 0) {
+                alert('Ce repas ne contient aucun aliment');
+                return;
+            }
+
+            const container = document.getElementById('recettesJourContent');
+            container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Génération de la recette...</p></div>';
+
+            try {
+                const recette = await genererRecette(jour, repas, menus[jour][repas]);
+                if (!recettesJour[jour]) recettesJour[jour] = {};
+                recettesJour[jour][repas] = recette;
+                
+                container.innerHTML = formaterRecette(recette, `${jour} - ${repas}`);
+                sauvegarderDansLocalStorage();
+            } catch (error) {
+                container.innerHTML = '<div class="empty-state">❌ Erreur lors de la génération de la recette</div>';
+            }
+        }
+
+        async function genererRecette(jour, repas, ingredients) {
+            const ingredientsTexte = ingredients.map(item => {
+                const aliment = ALIMENTS[item.nom];
+                return `${item.quantite}${aliment.unite} de ${item.nom}`;
+            }).join(', ');
+
+            const response = await fetch("https://api.anthropic.com/v1/messages", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "claude-sonnet-4-20250514",
+                    max_tokens: 1000,
+                    messages: [{
+                        role: "user",
+                        content: `Tu es un chef cuisinier créatif. Crée une recette simple et savoureuse avec ces ingrédients : ${ingredientsTexte}.
+
+Fournis UNIQUEMENT un JSON avec cette structure exacte (pas de texte avant ou après) :
+{
+  "titre": "Nom de la recette",
+  "temps": "Temps de préparation",
+  "difficulte": "Facile/Moyen/Difficile",
+  "etapes": ["étape 1", "étape 2", "etc."]
+}`
+                    }]
+                })
+            });
+
+            const data = await response.json();
+            const texte = data.content[0].text;
+            const jsonMatch = texte.match(/\{[\s\S]*\}/);
+            
+            if (jsonMatch) {
+                return JSON.parse(jsonMatch[0]);
+            }
+            
+            throw new Error("Format de réponse invalide");
+        }
+
+        function formaterRecette(recette, titre) {
+            return `
+                <div class="recipe-card">
+                    <h4>👨‍🍳 ${titre} : ${recette.titre}</h4>
+                    <div style="display: flex; gap: 20px; margin: 10px 0; color: #6b7280;">
+                        <span>⏱️ ${recette.temps}</span>
+                        <span>📊 ${recette.difficulte}</span>
+                    </div>
+                    <div class="recipe-steps">
+                        <h5>📝 Étapes de préparation</h5>
+                        <ol>
+                            ${recette.etapes.map(etape => `<li>${etape}</li>`).join('')}
+                        </ol>
+                    </div>
+                </div>
+            `;
+        }
+/* ---------------------------------------------------------
+   ✅ AFFICHAGE DES RECETTES + FILTRES Idées Recettes
+--------------------------------------------------------- */
+
+function ouvrirRecettes() {
+    afficherRecettes();
+    document.getElementById('recettesModal').classList.add('active');
+}
+
+function afficherRecettes(filtre = "tous") {
+    const container = document.getElementById("recettesContent");
+
+    let recettesAffichees = RECETTES;
+
+    if (filtre !== "tous") {
+        recettesAffichees = RECETTES.filter(r => r.tags.includes(filtre));
+    }
+
+    if (recettesAffichees.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">Aucune recette pour ce filtre 😕</div>
+        `;
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="recipe-grid">
+            ${recettesAffichees.map(r =>
+                `<div class="recipe-suggestion" onclick="afficherDetailRecette('${r.id}')">
+                    <h4>${r.titre}</h4>
+                    <div class="recipe-tags">
+                        ${r.tags.map(t => `<span class="recipe-tag">${t}</span>`).join("")}
+                    </div>
+                </div>`
+            ).join("")}
+        </div>
+    `;
+}
+
+function filtrerRecettes(type) {
+    document.querySelectorAll(".filter-chip").forEach(btn => btn.classList.remove("active"));
+    document.querySelector(`[data-filter="${type}"]`).classList.add("active");
+    afficherRecettes(type);
+}
+
+function afficherDetailRecette(id) {
+    const recette = RECETTES.find(r => r.id === id);
+    if (!recette) return;
+
+    document.getElementById("recetteDetailTitre").innerText = recette.titre;
+
+    document.getElementById("recetteDetailContent").innerHTML = `
+        <div class="recipe-meta">
+            <span>⏱️ ${recette.temps}</span>
+            <span>📊 ${recette.difficulte}</span>
+            <span>👨‍👩‍👧 Portions : ${recette.portions}</span>
+        </div>
+        <div class="recipe-ingredients">
+            <h5>🛒 Ingrédients</h5>
+            <ul>${recette.ingredients.map(i => `<li>${i}</li>`).join("")}</ul>
+        </div>
+        <div class="recipe-steps">
+            <h5>🧑‍🍳 Étapes</h5>
+            <ol>${recette.etapes.map(e => `<li>${e}</li>`).join("")}</ol>
+        </div>
+        <div class="recipe-tip">${recette.conseil}</div>
+    `;
+
+    document.getElementById("recetteDetailModal").classList.add("active");
+}
+        function fermerModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function sauvegarderDansLocalStorage() {
+            localStorage.setItem('monRegimeData', JSON.stringify({
+                menus,
+                stock,
+                envies,
+                recettesSemaine,
+                recettesJour
+            }));
+        }
+
+        function chargerDepuisLocalStorage() {
+            const saved = localStorage.getItem('monRegimeData');
+            if (saved) {
+                const data = JSON.parse(saved);
+                menus = data.menus || menus;
+                stock = data.stock || {};
+                envies = data.envies || [];
+                recettesSemaine = data.recettesSemaine || {};
+                recettesJour = data.recettesJour || {};
+            }
+        }
+
+        function exporterPDF() {
+            const courses = {};
+
+            JOURS.forEach(jour => {
+                REPAS.forEach(repas => {
+                    menus[jour][repas].forEach(item => {
+                        if (courses[item.nom]) {
+                            courses[item.nom] += item.quantite;
+                        } else {
+                            courses[item.nom] = item.quantite;
+                        }
+                    });
+                });
+            });
+
+            Object.keys(stock).forEach(aliment => {
+                if (courses[aliment]) {
+                    const alimentData = ALIMENTS[aliment];
+                    const quantiteEnStock = stock[aliment] * alimentData.quantite;
+                    courses[aliment] = Math.max(0, courses[aliment] - quantiteEnStock);
+                    if (courses[aliment] === 0) {
+                        delete courses[aliment];
+                    }
+                }
+            });
+
+            let contenu = '🛒 LISTE DE COURSES\n';
+            contenu += '===================\n\n';
+
+            Object.entries(courses).sort((a, b) => a[0].localeCompare(b[0])).forEach(([nom, quantite]) => {
+                const aliment = ALIMENTS[nom];
+                contenu += `☐ ${quantite} ${aliment.unite} ${nom}\n`;
+            });
+
+            contenu += '\n\n📦 EN STOCK\n';
+            contenu += '===================\n';
+            Object.entries(stock).forEach(([nom, quantite]) => {
+                const aliment = ALIMENTS[nom];
+                contenu += `✓ ${quantite} × ${aliment.quantite}${aliment.unite} ${nom}\n`;
+            });
+
+            contenu += '\n\n📊 STATISTIQUES\n';
+            contenu += '===================\n';
+            contenu += `Total semaine: ${calculerTotalSemaine()} kcal\n`;
+            contenu += `Moyenne/jour: ${Math.round(calculerTotalSemaine() / 7)} kcal\n\n`;
+
+            contenu += '📅 MENUS DE LA SEMAINE\n';
+            contenu += '===================\n\n';
+
+            JOURS.forEach(jour => {
+                contenu += `${jour} (${calculerTotalJour(jour)} kcal)\n`;
+                contenu += '-'.repeat(30) + '\n';
+                REPAS.forEach(repas => {
+                    contenu += `  ${repas}:\n`;
+                    menus[jour][repas].forEach(item => {
+                        const aliment = ALIMENTS[item.nom];
+                        contenu += `    - ${item.quantite}${aliment.unite} ${item.nom}\n`;
+                    });
+                });
+                contenu += '\n';
+            });
+
+            // Ajouter les recettes si disponibles
+            if (Object.keys(recettesSemaine).length > 0) {
+                contenu += '\n👨‍🍳 RECETTES DE LA SEMAINE\n';
+                contenu += '===================\n\n';
+                
+                JOURS.forEach(jour => {
+                    if (recettesSemaine[jour]) {
+                        contenu += `${jour}\n`;
+                        contenu += '-'.repeat(30) + '\n';
+                        REPAS.forEach(repas => {
+                            if (recettesSemaine[jour][repas]) {
+                                const r = recettesSemaine[jour][repas];
+                                contenu += `\n${repas}: ${r.titre}\n`;
+                                contenu += `⏱️ ${r.temps} | 📊 ${r.difficulte}\n`;
+                                contenu += 'Étapes:\n';
+                                r.etapes.forEach((etape, i) => {
+                                    contenu += `  ${i + 1}. ${etape}\n`;
+                                });
+                                contenu += '\n';
+                            }
+                        });
+                        contenu += '\n';
+                    }
+                });
+            }
+
+            const blob = new Blob([contenu], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'mon-regime-semaine.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+
+            alert('📄 Fichier exporté avec succès !');
+        }
+
+        // Fermer les modales en cliquant à l'extérieur
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.classList.remove('active');
+            }
+        }
+
+        // Initialisation au chargement de la page
+        initialiser();
+    </script>
+	<!-- IA locale TinyLlama -->
+<!-- ==================== SCRIPT FINAL ==================== -->
+<script>
+/* --- Initialisation après chargement complet --- */
+document.addEventListener("DOMContentLoaded", () => {
+  try {
+    initialiser();
+    console.log("✅ Mon Régime initialisé avec succès.");
+  } catch (err) {
+    console.error("Erreur lors de l'initialisation :", err);
+  }
+});
+
+/* --- Sauvegarde automatique des menus --- */
+function sauvegarderMenus() {
+  try {
+    localStorage.setItem("menus", JSON.stringify(menus));
+    console.log("💾 Menus sauvegardés automatiquement");
+  } catch (err) {
+    console.warn("Erreur lors de la sauvegarde :", err);
+  }
+}
+
+/* --- Rechargement automatique au démarrage --- */
+function rechargerMenus() {
+  const saved = localStorage.getItem("menus");
+  if (saved) {
+    try {
+      menus = JSON.parse(saved);
+      console.log("♻️ Menus rechargés depuis le stockage local");
+    } catch {
+      console.warn("Impossible de recharger les menus sauvegardés.");
+    }
+  }
+}
+
+/* --- Surveille les changements dans le menu pour auto-sauvegarder --- */
+const observer = new MutationObserver(() => {
+  sauvegarderMenus();
+});
+observer.observe(document.body, { childList: true, subtree: true });
+
+/* --- Appel initial du rechargement --- */
+rechargerMenus();
+
+/* --- Empêche le code IA local (Transformers/TinyLlama) --- */
+// Si des scripts importent Transformers ou TinyLlama, on les ignore
+window.addEventListener("error", (e) => {
+  if (String(e.filename).includes("transformers") || String(e.message).includes("TinyLlama")) {
+    e.preventDefault();
+    console.log("🚫 Scripts IA locaux ignorés (gérés par server.js)");
+  }
+});
+</script>
+<script>
+async function genRecetteIA(jour, repas) {
+  // 🧩 Vérifie et initialise la structure du menu
+  if (!menus) menus = {};
+  if (!menus[jour]) menus[jour] = {};
+  if (!menus[jour][repas]) menus[jour][repas] = [];
+
+  const items = menus[jour][repas];
+
+  // ⚠️ Si aucun aliment n’est ajouté
+  if (!Array.isArray(items) || items.length === 0) {
+    alert("⚠️ Ce repas ne contient aucun aliment. Glissez-en depuis la liste avant de demander une recette IA.");
+    return;
+  }
+
+  // 🧾 Construit la liste des ingrédients
+  const ingredients = items.map(it => {
+    const aliment = ALIMENTS[it.nom];
+    if (!aliment) return it.nom;
+    return `${it.quantite}${aliment.unite} de ${it.nom}`;
+  }).join(', ');
+
+  // 🎬 Prépare la modale
+  const titreEl = document.getElementById('recetteTitre');
+  const contenuEl = document.getElementById('recetteContent');
+  const modalEl = document.getElementById('recetteModal');
+
+  if (!titreEl || !contenuEl || !modalEl) {
+    alert("⚠️ La fenêtre de recette IA est introuvable dans cette page.");
+    return;
+  }
+
+  titreEl.innerText = `Recette IA — ${jour} / ${repas}`;
+  contenuEl.innerHTML = '<p>⏳ Génération de la recette en cours...</p>';
+  modalEl.classList.add('active');
+
+  // 📡 Appel au serveur local (Node.js)
+  try {
+    const resp = await fetch('/api/gen_recette', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jour, repas, ingredients })
+    });
+
+    const data = await resp.json();
+
+    if (!resp.ok || !data || data.error) {
+      contenuEl.innerHTML = `<div class="empty-state">❌ Erreur : ${data.error || 'Réponse invalide du serveur.'}</div>`;
+      return;
+    }
+
+    // 🧑‍🍳 Affiche la recette générée
+    contenuEl.innerHTML = `
+      <div class="recipe-card">
+        <h4>${data.titre || 'Recette IA'}</h4>
+        <div>⏱️ ${data.temps || 'Temps inconnu'} • ${data.difficulte || 'Facile'}</div>
+        <h5 style="margin-top:8px">Étapes</h5>
+        <ol>${(data.etapes || []).map(e => `<li>${e}</li>`).join('')}</ol>
+      </div>`;
+  } catch (err) {
+    console.error('Erreur réseau ou IA :', err);
+    contenuEl.innerHTML = '<div class="empty-state">❌ Erreur de connexion au serveur IA.</div>';
+  }
+}
+</script>
+<!-- Modal Recette IA -->
+<div id="recetteModal" class="modal">
+  <div class="modal-content">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h3 id="recetteTitre">Recette IA</h3>
+      <button onclick="fermerModal()">Fermer</button>
+    </div>
+    <div id="recetteContent"></div>
+  </div>
+</div>
+</body>
+</html>
