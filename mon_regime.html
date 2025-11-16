@@ -1671,71 +1671,150 @@
             return JOURS.reduce((total, jour) => total + calculerTotalJour(jour), 0);
         }
 
-        function genererMenuEquilibre() {
-            if (!confirm('Cela va remplacer tous vos menus actuels. Continuer ?')) return;
+        // ========================================
+// ========================================
+// FONCTION MENU ÉQUILIBRÉ - VERSION CORRIGÉE
+// ========================================
 
-            const alimentsDispos = Object.keys(ALIMENTS);
-            
-            // Priorité au stock et aux envies
-            const alimentsPrioritaires = [
-                ...Object.keys(stock),
-                ...envies.filter(e => !stock[e])
-            ];
+function genererMenuEquilibre() {
+    // Demande confirmation avant de remplacer les menus existants
+    if (!confirm('⚠️ Cela va remplacer tous vos menus actuels. Continuer ?')) {
+        return;
+    }
 
-            const proteines = alimentsDispos.filter(nom => 
-                ['Viandes', 'Poissons', 'Œufs'].includes(ALIMENTS[nom].categorie)
-            );
-            const feculents = alimentsDispos.filter(nom => 
-                ALIMENTS[nom].categorie === 'Féculents'
-            );
-            const legumes = alimentsDispos.filter(nom => 
-                ALIMENTS[nom].categorie === 'Légumes'
-            );
-            const fruits = alimentsDispos.filter(nom => 
-                ALIMENTS[nom].categorie === 'Fruits'
-            );
+    console.log("🎲 Génération d'un menu équilibré pour la semaine...");
 
-            function choisirAliment(liste) {
-                const prioritaires = liste.filter(a => alimentsPrioritaires.includes(a));
-                if (prioritaires.length > 0) {
-                    return prioritaires[Math.floor(Math.random() * prioritaires.length)];
-                }
-                return liste[Math.floor(Math.random() * liste.length)];
-            }
+    // 1️⃣ PRÉPARATION DES CATÉGORIES D'ALIMENTS
+    const alimentsDispos = Object.keys(ALIMENTS);
+    
+    // Aliments prioritaires (stock + envies)
+    const alimentsPrioritaires = [
+        ...Object.keys(stock),
+        ...envies.filter(e => !stock[e])
+    ];
 
-            JOURS.forEach(jour => {
-                menus[jour]["Petit déjeuner"] = [
-                    {nom: "café", quantite: 200},
-                    {nom: "pain complet", quantite: 50},
-                    {nom: "beurre", quantite: 10}
-                ];
+    // Catégories pour un repas équilibré
+    const proteines = alimentsDispos.filter(nom => 
+        ['Viandes', 'Poissons', 'Œufs', 'Protéines végétales'].includes(ALIMENTS[nom].categorie)
+    );
+    
+    const feculents = alimentsDispos.filter(nom => 
+        ['Féculents / Céréales'].includes(ALIMENTS[nom].categorie)
+    );
+    
+    const legumes = alimentsDispos.filter(nom => 
+        ALIMENTS[nom].categorie === 'Légumes'
+    );
+    
+    const fruits = alimentsDispos.filter(nom => 
+        ALIMENTS[nom].categorie === 'Fruits'
+    );
 
-                const proteineDej = choisirAliment(proteines);
-                const feculentDej = choisirAliment(feculents);
-                const legumeDej = choisirAliment(legumes);
+    // 2️⃣ FONCTION DE SÉLECTION INTELLIGENTE
+    function choisirAliment(liste, dejaPris = []) {
+        if (!liste || liste.length === 0) return null;
+        
+        // Filtre les aliments déjà utilisés
+        let listeFiltree = liste.filter(a => !dejaPris.includes(a));
+        if (listeFiltree.length === 0) listeFiltree = liste;
+        
+        // Priorité au stock et aux envies
+        const prioritaires = listeFiltree.filter(a => alimentsPrioritaires.includes(a));
+        if (prioritaires.length > 0) {
+            return prioritaires[Math.floor(Math.random() * prioritaires.length)];
+        }
+        
+        // Sinon, choix aléatoire
+        return listeFiltree[Math.floor(Math.random() * listeFiltree.length)];
+    }
 
-                menus[jour]["Déjeuner"] = [
-                    {nom: proteineDej, quantite: ALIMENTS[proteineDej].quantite},
-                    {nom: feculentDej, quantite: ALIMENTS[feculentDej].quantite},
-                    {nom: legumeDej, quantite: ALIMENTS[legumeDej].quantite}
-                ];
+    // 3️⃣ GÉNÉRATION DES MENUS
+    const alimentsUtilises = {
+        proteines: [],
+        feculents: [],
+        legumes: []
+    };
 
-                const proteineDin = choisirAliment(proteines);
-                const legumeDin = choisirAliment(legumes);
-                const fruitDin = choisirAliment(fruits);
+    JOURS.forEach((jour, indexJour) => {
+        console.log(`📅 Génération du menu pour ${jour}...`);
 
-                menus[jour]["Dîner"] = [
-                    {nom: proteineDin, quantite: ALIMENTS[proteineDin].quantite},
-                    {nom: legumeDin, quantite: ALIMENTS[legumeDin].quantite},
-                    {nom: fruitDin, quantite: ALIMENTS[fruitDin].quantite}
-                ];
+        // ========== PETIT DÉJEUNER FIXE ==========
+        menus[jour]["Petit déjeuner"] = [
+            {nom: "café", quantite: 200},
+            {nom: "pain complet", quantite: 50},
+            {nom: "beurre", quantite: 10}
+        ];
+
+        // ========== DÉJEUNER (REPAS PRINCIPAL) ==========
+        const proteineDej = choisirAliment(proteines, alimentsUtilises.proteines);
+        const feculentDej = choisirAliment(feculents, alimentsUtilises.feculents);
+        const legumeDej = choisirAliment(legumes, alimentsUtilises.legumes);
+        const fruitDej = Math.random() > 0.3 ? choisirAliment(fruits) : null;
+
+        alimentsUtilises.proteines.push(proteineDej);
+        alimentsUtilises.feculents.push(feculentDej);
+        alimentsUtilises.legumes.push(legumeDej);
+
+        menus[jour]["Déjeuner"] = [
+            {nom: proteineDej, quantite: ALIMENTS[proteineDej].quantite},
+            {nom: feculentDej, quantite: ALIMENTS[feculentDej].quantite},
+            {nom: legumeDej, quantite: ALIMENTS[legumeDej].quantite}
+        ];
+
+        if (fruitDej) {
+            menus[jour]["Déjeuner"].push({
+                nom: fruitDej,
+                quantite: ALIMENTS[fruitDej].quantite
             });
-
-            afficherCalendrier();
-            sauvegarderDansLocalStorage();
-            alert('✅ Menu équilibré généré en utilisant votre stock et vos envies !');
         }
 
+        // ========== DÎNER (PLUS LÉGER) ==========
+        const proteineDin = choisirAliment(proteines, alimentsUtilises.proteines);
+        const legumeDin1 = choisirAliment(legumes, alimentsUtilises.legumes);
+        const legumeDin2 = Math.random() > 0.5 ? choisirAliment(legumes, [...alimentsUtilises.legumes, legumeDin1]) : null;
+        const fruitDin = choisirAliment(fruits);
+
+        alimentsUtilises.proteines.push(proteineDin);
+        alimentsUtilises.legumes.push(legumeDin1);
+        if (legumeDin2) alimentsUtilises.legumes.push(legumeDin2);
+
+        menus[jour]["Dîner"] = [
+            {nom: proteineDin, quantite: Math.round(ALIMENTS[proteineDin].quantite * 0.8)}, // Portion réduite le soir
+            {nom: legumeDin1, quantite: ALIMENTS[legumeDin1].quantite}
+        ];
+
+        if (legumeDin2) {
+            menus[jour]["Dîner"].push({
+                nom: legumeDin2,
+                quantite: ALIMENTS[legumeDin2].quantite
+            });
+        }
+
+        menus[jour]["Dîner"].push({
+            nom: fruitDin,
+            quantite: ALIMENTS[fruitDin].quantite
+        });
+
+        // Réinitialisation partielle pour varier (tous les 3 jours)
+        if ((indexJour + 1) % 3 === 0) {
+            alimentsUtilises.proteines = [];
+            alimentsUtilises.feculents = [];
+            alimentsUtilises.legumes = [];
+        }
+    });
+
+    // 4️⃣ AFFICHAGE ET SAUVEGARDE
+    afficherCalendrier();
+    sauvegarderDansLocalStorage();
+    
+    // 5️⃣ MESSAGE DE CONFIRMATION
+    const totalSemaine = calculerTotalSemaine();
+    const moyenne = Math.round(totalSemaine / 7);
+    
+    alert(`✅ Menu équilibré généré avec succès !\n\n📊 Total semaine : ${totalSemaine} kcal\n📈 Moyenne/jour : ${moyenne} kcal\n\n💡 Le menu utilise en priorité votre stock et vos envies !`);
+    
+    console.log("✅ Menu équilibré généré !");
+}
         function suggererRecette(jour, repas) {
             const ingredients = menus[jour][repas].map(item => item.nom);
             const recettesTrouvees = RECETTES.filter(recette => {
