@@ -1,88 +1,99 @@
-require('dotenv').config();
+require('dotenv').config({ path: './mon_regime_pack.env' });
 const express = require('express');
 const fetch = require('node-fetch');
 const path = require('path');
 const app = express();
 const PORT = 3000;
 
-// Middleware
 app.use(express.json());
-app.use(express.static(path.join(__dirname))); // Sert les fichiers HTML, CSS, JS
+app.use(express.static(path.join(__dirname)));
 
-// Variables d'environnement
-const HF_MODEL = process.env.HF_MODEL || 'google/flan-t5-large';
-const HF_TOKEN = process.env.HF_TOKEN || '';
+// Fonction pour extraire du JSON même si l'IA parle autour
+function extractJSON(text) {
+  const first = text.indexOf("{");
+  const last = text.lastIndexOf("}");
+  if (first === -1 || last === -1) return null;
+  const jsonText = text.substring(first, last + 1);
+  try {
+    return JSON.parse(jsonText);
+  } catch (e) {
+    return null;
+  }
+}
 
-// Route API pour générer une recette
+// Route API IA
 app.post('/api/gen_recette', async (req, res) => {
   try {
     const { jour, repas, ingredients } = req.body;
-    if (!ingredients || ingredients.length === 0) {
-      return res.status(400).json({ error: 'Aucun ingrédient fourni' });
-    }
 
-    const prompt = `Tu es un chef cuisinier créatif. Crée une recette simple, détaillée et savoureuse avec ces ingrédients: ${ingredients}.
-Réponds uniquement en JSON avec la structure:
-{"titre":"", "temps":"", "difficulte":"", "etapes":["...","..."]}`;
+    console.log("📥 Requête reçue :", { jour, repas, ingredients });
 
-    const url = `https://api-inference.huggingface.tech/models/${HF_MODEL}`;
-    const headers = {
-      'Content-Type': 'application/json',
-      ...(HF_TOKEN && { Authorization: `Bearer ${HF_TOKEN}` })
-    };
+    const prompt = `
+Tu es un chef cuisinier professionnel.
+Génère UNIQUEMENT un JSON strict pour une recette.
 
-    const body = JSON.stringify({
-      inputs: prompt,
-      parameters: { max_new_tokens: 300 }
+CONTRAINTES IMPORTANTES :
+- FORMAT STRICT :
+{
+  "titre": "",
+  "temps": "",
+  "difficulte": "",
+  "etapes": ["", "", "", ""]
+}
+- ATTENTION : "etapes" doit être une LISTE DE TEXTES, PAS une liste d'objets.
+- PAS de descriptions structurées
+- PAS d'objets dans les étapes
+- 5 à 8 étapes maximum
+- Niveau débutant
+- Utiliser ces ingrédients : ${ingredients}
+- PAS DE TEXTE en dehors du JSON.
+`;
+
+    const response = await fetch("http://localhost:11434/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "llama3.1",
+        messages: [{ role: "user", content: prompt }],
+        stream: false
+      })
     });
 
-    const hfResp = await fetch(url, { method: 'POST', headers, body });
-    const text = await hfResp.text();
+    const data = await response.json();
+    const content = data.message?.content || "";
 
-    // Log brut pour débogage
-    console.log("Réponse brute Hugging Face :", text);
+    console.log("🧠 Réponse IA brute :\n", content);
 
-    // Gestion des erreurs d'accès
-    if (hfResp.status === 401 || hfResp.status === 403) {
-      return res.status(403).json({
-        error: 'Accès refusé par Hugging Face. Vérifiez votre token HF_TOKEN.',
-        hf_status: hfResp.status,
-        hf_text: text
-      });
+    // Extraction robuste
+    const recette = extractJSON(content);
+
+    if (!recette) {
+      throw new Error("Impossible de trouver du JSON dans la réponse");
     }
 
-    // Tentative d'extraction JSON
-    try {
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const recette = JSON.parse(jsonMatch[0]);
-        return res.json(recette);
-      }
+    console.log("✅ Recette extraite :", recette.titre);
 
-      const parsed = JSON.parse(text);
-      if (Array.isArray(parsed) && parsed[0]?.generated_text) {
-        const gen = parsed[0].generated_text;
-        const match2 = gen.match(/\{[\s\S]*\}/);
-        if (match2) {
-          const recette = JSON.parse(match2[0]);
-          return res.json(recette);
-        }
-        return res.status(500).json({ error: 'Réponse du modèle non interprétable', raw: gen });
-      }
-
-      return res.status(500).json({ error: "Réponse inattendue du modèle", raw: text });
-    } catch (e) {
-      console.error("Erreur de parsing JSON :", e.message);
-      return res.status(500).json({ error: "Erreur lors de l'analyse de la réponse du modèle", raw: text });
-    }
+    res.json(recette);
 
   } catch (err) {
-    console.error("Erreur serveur :", err.message);
-    res.status(500).json({ error: 'Erreur serveur interne', detail: err.message });
+    console.error("💥 Erreur IA :", err);
+
+    res.json({
+      titre: "Recette improvisée",
+      temps: "30min",
+      difficulte: "Facile",
+      etapes: [
+        "Préparez vos ingrédients",
+        "Cuisinez selon votre inspiration",
+        "Assaisonnez selon vos goûts",
+        "Servez avec plaisir"
+      ]
+    });
   }
 });
 
-// Démarrage du serveur
 app.listen(PORT, () => {
-  console.log(`🚀 Serveur démarré sur http://localhost:${PORT}`);
+  console.log(`\n🚀 Serveur Mon Régime démarré`);
+  console.log(`📍 URL: http://localhost:3000/mon_regime.html`);
+  console.log(`🧠 IA locale : Llama 3.1 via Ollama\n`);
 });
