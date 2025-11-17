@@ -718,7 +718,20 @@
         <div class="toolbar">
             <button class="btn btn-purple" onclick="ouvrirStock()">🏠 Mon Stock</button>
             <button class="btn btn-purple" onclick="ouvrirEnvies()">💭 Mes Envies</button>
-            <button class="btn btn-primary" onclick="genererMenuEquilibre()">🎲 Menu Équilibré</button>
+            <div style="
+    background-color: #e6f7ff;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #b3e0ff;
+">
+    <p style="margin: 0; font-size: 14px;">
+        ⚠️ <strong>Flexibilité alimentaire :</strong>
+        Chaque jour, une marge de <strong>250–350 kcal</strong> est réservée pour vos desserts, boissons, fruits supplémentaires ou petits plaisirs.
+        Ces calories <strong>ne sont pas incluses</strong> dans les repas principaux.
+    </p>
+</div>
+			<button class="btn btn-primary" onclick="genererMenuEquilibre()">🎲 Menu Équilibré</button>
             <button class="btn btn-secondary" onclick="afficherListeCourses()">🛒 Liste de Courses</button>
             <button class="btn btn-warning" onclick="afficherStatistiques()">📊 Statistiques</button>
             <button class="btn btn-purple" onclick="ouvrirRecettes()">👨‍🍳 Idées Recettes</button>
@@ -1675,7 +1688,16 @@
 // ========================================
 // FONCTION MENU ÉQUILIBRÉ - VERSION CORRIGÉE
 // ========================================
-
+// Fonction pour calculer les calories d'un repas
+function calculerCaloriesRepas(repas) {
+    return repas.reduce((total, aliment) => {
+        const infoAliment = ALIMENTS[aliment.nom];
+        if (!infoAliment) return total;
+        // Calorie = (calorie pour 100g * quantite) / 100
+        const calories = (infoAliment.calories * aliment.quantite) / 100;
+        return total + Math.round(calories);
+    }, 0);
+}
 function genererMenuEquilibre() {
     // Demande confirmation avant de remplacer les menus existants
     if (!confirm('⚠️ Cela va remplacer tous vos menus actuels. Continuer ?')) {
@@ -1803,19 +1825,74 @@ function genererMenuEquilibre() {
         }
     });
 
-    // 4️⃣ AFFICHAGE ET SAUVEGARDE
-    afficherCalendrier();
-    sauvegarderDansLocalStorage();
-    
-    // 5️⃣ MESSAGE DE CONFIRMATION
-    const totalSemaine = calculerTotalSemaine();
-    const moyenne = Math.round(totalSemaine / 7);
-    
-    alert(`✅ Menu équilibré généré avec succès !\n\n📊 Total semaine : ${totalSemaine} kcal\n📈 Moyenne/jour : ${moyenne} kcal\n\n💡 Le menu utilise en priorité votre stock et vos envies !`);
-    
-    console.log("✅ Menu équilibré généré !");
-}
-        function suggererRecette(jour, repas) {
+    // ========== CALCUL DES CALORIES ET AJUSTEMENT AVEC PAIN ==========
+const caloriesMin = 1500;
+const caloriesMax = 1700;
+const margeMin = 250;
+const margeMax = 350;
+const caloriesPainParTranche = 80; // 1 tranche de pain complet ~80 kcal
+
+JOURS.forEach(jour => {
+    // Petit-déjeuner fixe (déjà inclus)
+    const caloriesPetitDej = 2 + 120 + 75; // Café + pain + beurre
+
+    // Déjeuner
+    const caloriesDejeuner = calculerCaloriesRepas(menus[jour]["Déjeuner"]);
+
+    // Dîner
+    const caloriesDiner = calculerCaloriesRepas(menus[jour]["Dîner"]);
+
+    // Total sans pain supplémentaire
+    let totalSansMarge = caloriesPetitDej + caloriesDejeuner + caloriesDiner;
+
+    // Calcul du déficit calorique
+    let deficit = caloriesMin - totalSansMarge;
+
+    // Si déficit > 0, ajouter du pain au déjeuner et/ou dîner
+    if (deficit > 0) {
+        const tranchesNecessaires = Math.ceil(deficit / caloriesPainParTranche);
+        const tranchesParRepas = Math.floor(tranchesNecessaires / 2); // Répartir entre déjeuner et dîner
+
+        // Ajouter au déjeuner
+        if (tranchesParRepas > 0) {
+            menus[jour]["Déjeuner"].push({
+                nom: "pain complet",
+                quantite: tranchesParRepas * 30 // 30g par tranche
+            });
+        }
+
+        // Ajouter au dîner (si besoin)
+        if (tranchesNecessaires > tranchesParRepas) {
+            menus[jour]["Dîner"].push({
+                nom: "pain complet",
+                quantite: (tranchesNecessaires - tranchesParRepas) * 30
+            });
+        }
+
+        // Recalculer le total après ajout du pain
+        totalSansMarge = caloriesPetitDej + calculerCaloriesRepas(menus[jour]["Déjeuner"]) + calculerCaloriesRepas(menus[jour]["Dîner"]);
+    }
+
+    // Marge calculée (250–350 kcal)
+    const marge = Math.max(margeMin, Math.min(margeMax, caloriesMin - totalSansMarge));
+
+    // Ajout de la marge au menu
+    menus[jour]["Marge"] = {
+        description: `Marge pour desserts, boissons ou petits plaisirs : ${marge} kcal.`,
+        calories: marge
+    };
+});
+
+// ========== AFFICHAGE ET SAUVEGARDE ==========
+afficherCalendrier();
+sauvegarderDansLocalStorage();
+
+// ========== MESSAGE DE CONFIRMATION ==========
+const totalSemaine = calculerTotalSemaine();
+const moyenne = Math.round(totalSemaine / 7);
+alert(`✅ Menu équilibré généré avec succès !\n\n📊 Total semaine : ${totalSemaine} kcal\n📈 Moyenne/jour : ${moyenne} kcal\n\n💡 Une marge de 250–350 kcal/jour est prévue pour vos desserts et boissons.`);
+      } 
+	   function suggererRecette(jour, repas) {
             const ingredients = menus[jour][repas].map(item => item.nom);
             const recettesTrouvees = RECETTES.filter(recette => {
                 return recette.ingredients.some(ing => ingredients.includes(ing));
