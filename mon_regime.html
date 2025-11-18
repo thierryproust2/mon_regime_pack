@@ -716,6 +716,7 @@
         </div>
 
         <div class="toolbar">
+	<button class="btn btn-secondary" onclick="exporterCalendrier()">📆 Export Agenda</button>	
     <button class="btn btn-purple" onclick="ouvrirStock()">🏠 Mon Stock</button>
     <button class="btn btn-purple" onclick="ouvrirEnvies()">💭 Mes Envies</button>
     <div style="background-color: #e6f7ff; padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #b3e0ff;">
@@ -851,55 +852,55 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
        const ALIMENTS = {
-  "abricot": {emoji: "🍑", calories: 48, quantite: 100, unite: "g", categorie: "Fruits"},
-  "agneau": {emoji: "🍖", calories: 250, quantite: 100, unite: "g", categorie: "Viandes"},
+  "abricot": {emoji: "🍑", calories: 48, quantite: 125, unite: "g", categorie: "Fruits"},
+  "agneau": {emoji: "🍖", calories: 250, quantite: 150, unite: "g", categorie: "Viandes"},
   "ail": {emoji: "🧄", calories: 13, quantite: 10, unite: "g", categorie: "Aromates / Épices"},
   "amandes": {emoji: "🌰", calories: 174, quantite: 30, unite: "g", categorie: "Fruits à coque"},
   "ananas": {emoji: "🍍", calories: 75, quantite: 150, unite: "g", categorie: "Fruits"},
   "artichaut": {emoji: "🌿", calories: 71, quantite: 150, unite: "g", categorie: "Légumes"},
-  "asperge": {emoji: "🥬", calories: 20, quantite: 100, unite: "g", categorie: "Légumes"},
+  "asperge": {emoji: "🥬", calories: 20, quantite: 150, unite: "g", categorie: "Légumes"},
   "aubergine": {emoji: "🍆", calories: 38, quantite: 150, unite: "g", categorie: "Légumes"},
-  "avocat": {emoji: "🥑", calories: 160, quantite: 100, unite: "g", categorie: "Fruits"},
-  "banane": {emoji: "🍌", calories: 89, quantite: 100, unite: "g", categorie: "Fruits"},
+  "avocat": {emoji: "🥑", calories: 160, quantite: 150, unite: "g", categorie: "Fruits"},
+  "banane": {emoji: "🍌", calories: 89, quantite: 150, unite: "g", categorie: "Fruits"},
   "basilic": {emoji: "🌿", calories: 2, quantite: 10, unite: "g", categorie: "Aromates / Épices"},
-  "betterave": {emoji: "🥗", calories: 43, quantite: 100, unite: "g", categorie: "Légumes"},
+  "betterave": {emoji: "🥗", calories: 43, quantite: 120, unite: "g", categorie: "Légumes"},
   "beurre": {emoji: "🧈", calories: 72, quantite: 10, unite: "g", categorie: "Matières grasses"},
   "beurre de cacahuète": {emoji: "🥜", calories: 118, quantite: 20, unite: "g", categorie: "Matières grasses"},
-  "biscotte": {emoji: "🍞", calories: 38, quantite: 10, unite: "g", categorie: "Féculents / Céréales"},
+  "biscotte": {emoji: "🍞", calories: 38, quantite: 30, unite: "g", categorie: "Féculents / Céréales"},
   "biscuit": {emoji: "🍪", calories: 135, quantite: 30, unite: "g", categorie: "Produits sucrés"},
-  "blé": {emoji: "🌾", calories: 204, quantite: 60, unite: "g", categorie: "Féculents / Céréales"},
-  "bœuf": {emoji: "🥩", calories: 250, quantite: 100, unite: "g", categorie: "Viandes"},
+  "blé": {emoji: "🌾", calories: 204, quantite: 100, unite: "g", categorie: "Féculents / Céréales"},
+  "bœuf": {emoji: "🥩", calories: 250, quantite: 150, unite: "g", categorie: "Viandes"},
   "bonbon": {emoji: "🍬", calories: 20, quantite: 5, unite: "g", categorie: "Produits sucrés"},
-  "boulgour": {emoji: "🌾", calories: 205, quantite: 60, unite: "g", categorie: "Féculents / Céréales"},
+  "boulgour": {emoji: "🌾", calories: 205, quantite: 100, unite: "g", categorie: "Féculents / Céréales"},
   "brie": {emoji: "🧀", calories: 100, quantite: 30, unite: "g", categorie: "Produits laitiers"},
   "brioche": {emoji: "🥐", calories: 190, quantite: 50, unite: "g", categorie: "Féculents / Céréales"},
-  "brocoli": {emoji: "🥦", calories: 34, quantite: 100, unite: "g", categorie: "Légumes"},
+  "brocoli": {emoji: "🥦", calories: 34, quantite: 150, unite: "g", categorie: "Légumes"},
   "cabillaud": {emoji: "🐟", calories: 98, quantite: 120, unite: "g", categorie: "Poissons"},
   "cacahuètes": {emoji: "🥜", calories: 170, quantite: 30, unite: "g", categorie: "Fruits à coque"},
   "café": {emoji: "☕", calories: 4, quantite: 200, unite: "ml", categorie: "Boissons"},
-  "caille": {emoji: "🐦", calories: 134, quantite: 100, unite: "g", categorie: "Viandes"},
-  "calamars": {emoji: "🦑", calories: 92, quantite: 100, unite: "g", categorie: "Poissons"},
+  "caille": {emoji: "🐦", calories: 134, quantite: 150, unite: "g", categorie: "Viandes"},
+  "calamars": {emoji: "🦑", calories: 92, quantite: 150, unite: "g", categorie: "Poissons"},
   "camembert": {emoji: "🧀", calories: 87, quantite: 30, unite: "g", categorie: "Produits laitiers"},
-  "canard": {emoji: "🦆", calories: 190, quantite: 100, unite: "g", categorie: "Viandes"},
+  "canard": {emoji: "🦆", calories: 190, quantite: 150, unite: "g", categorie: "Viandes"},
   "cannelle": {emoji: "🧂", calories: 2, quantite: 1, unite: "g", categorie: "Aromates / Épices"},
   "câpres": {emoji: "🫒", calories: 2, quantite: 10, unite: "g", categorie: "Condiments"},
-  "carotte": {emoji: "🥕", calories: 40, quantite: 100, unite: "g", categorie: "Légumes"},
+  "carotte": {emoji: "🥕", calories: 40, quantite: 150, unite: "g", categorie: "Légumes"},
   "cassis": {emoji: "🫐", calories: 63, quantite: 100, unite: "g", categorie: "Fruits"},
-  "céleri branche": {emoji: "🥬", calories: 13, quantite: 80, unite: "g", categorie: "Légumes"},
-  "céleri rave": {emoji: "🥬", calories: 42, quantite: 100, unite: "g", categorie: "Légumes"},
+  "céleri branche": {emoji: "🥬", calories: 13, quantite: 150, unite: "g", categorie: "Légumes"},
+  "céleri rave": {emoji: "🥬", calories: 42, quantite: 120, unite: "g", categorie: "Légumes"},
   "céréales petit-déjeuner": {emoji: "🥣", calories: 113, quantite: 30, unite: "g", categorie: "Féculents / Céréales"},
   "cerise": {emoji: "🍒", calories: 50, quantite: 100, unite: "g", categorie: "Fruits"},
-  "champignons": {emoji: "🍄", calories: 22, quantite: 100, unite: "g", categorie: "Légumes"},
-  "châtaigne": {emoji: "🌰", calories: 107, quantite: 50, unite: "g", categorie: "Fruits à coque"},
+  "champignons": {emoji: "🍄", calories: 22, quantite: 150, unite: "g", categorie: "Légumes"},
+  "châtaigne": {emoji: "🌰", calories: 107, quantite: 150, unite: "g", categorie: "Fruits à coque"},
   "cheddar": {emoji: "🧀", calories: 121, quantite: 30, unite: "g", categorie: "Produits laitiers"},
   "chicorée": {emoji: "🥬", calories: 14, quantite: 80, unite: "g", categorie: "Légumes"},
   "chips": {emoji: "🟠", calories: 268, quantite: 50, unite: "g", categorie: "Snacks"},
   "chocolat au lait": {emoji: "🍫", calories: 106, quantite: 20, unite: "g", categorie: "Produits sucrés"},
   "chocolat blanc": {emoji: "🍫", calories: 108, quantite: 20, unite: "g", categorie: "Produits sucrés"},
   "chocolat noir": {emoji: "🍫", calories: 109, quantite: 20, unite: "g", categorie: "Produits sucrés"},
-  "chou blanc": {emoji: "🥬", calories: 25, quantite: 100, unite: "g", categorie: "Légumes"},
-  "chou de Bruxelles": {emoji: "🥬", calories: 45, quantite: 100, unite: "g", categorie: "Légumes"},
-  "chou rouge": {emoji: "🥬", calories: 30, quantite: 100, unite: "g", categorie: "Légumes"},
+  "chou blanc": {emoji: "🥬", calories: 25, quantite: 150, unite: "g", categorie: "Légumes"},
+  "chou de Bruxelles": {emoji: "🥬", calories: 45, quantite: 150, unite: "g", categorie: "Légumes"},
+  "chou rouge": {emoji: "🥬", calories: 30, quantite: 150, unite: "g", categorie: "Légumes"},
   "chou-fleur": {emoji: "🥬", calories: 38, quantite: 150, unite: "g", categorie: "Légumes"},
   "ciboulette": {emoji: "🌿", calories: 2, quantite: 5, unite: "g", categorie: "Aromates / Épices"},
   "citron": {emoji: "🍋", calories: 17, quantite: 60, unite: "g", categorie: "Fruits"},
@@ -908,20 +909,20 @@
   "coca-cola": {emoji: "🥤", calories: 105, quantite: 250, unite: "ml", categorie: "Boissons"},
   "coco (noix de)": {emoji: "🥥", calories: 177, quantite: 50, unite: "g", categorie: "Fruits à coque"},
   "colin": {emoji: "🐟", calories: 103, quantite: 120, unite: "g", categorie: "Poissons"},
-  "compote": {emoji: "🍎", calories: 85, quantite: 100, unite: "g", categorie: "Produits sucrés"},
-  "concombre": {emoji: "🥒", calories: 12, quantite: 100, unite: "g", categorie: "Légumes"},
+  "compote": {emoji: "🍎", calories: 85, quantite: 120, unite: "g", categorie: "Produits sucrés"},
+  "concombre": {emoji: "🥒", calories: 12, quantite: 125, unite: "g", categorie: "Légumes"},
   "confiture": {emoji: "🍯", calories: 50, quantite: 20, unite: "g", categorie: "Produits sucrés"},
-  "coquillettes": {emoji: "🍝", calories: 280, quantite: 80, unite: "g", categorie: "Féculents / Céréales"},
+  "coquillettes": {emoji: "🍝", calories: 280, quantite: 130, unite: "g", categorie: "Féculents / Céréales"},
   "coriandre": {emoji: "🌿", calories: 2, quantite: 10, unite: "g", categorie: "Aromates / Épices"},
   "cornichon": {emoji: "🥒", calories: 3, quantite: 30, unite: "g", categorie: "Légumes"},
   "cottage cheese": {emoji: "🧀", calories: 98, quantite: 100, unite: "g", categorie: "Produits laitiers"},
   "courgette": {emoji: "🥒", calories: 26, quantite: 150, unite: "g", categorie: "Légumes"},
-  "couscous": {emoji: "🌾", calories: 226, quantite: 60, unite: "g", categorie: "Féculents / Céréales"},
+  "couscous": {emoji: "🌾", calories: 226, quantite: 100, unite: "g", categorie: "Féculents / Céréales"},
   "crabe": {emoji: "🦀", calories: 87, quantite: 100, unite: "g", categorie: "Poissons"},
   "crème fraîche": {emoji: "🥛", calories: 90, quantite: 30, unite: "g", categorie: "Matières grasses"},
   "crème glacée": {emoji: "🍨", calories: 207, quantite: 100, unite: "g", categorie: "Produits sucrés"},
-  "cresson": {emoji: "🥬", calories: 6, quantite: 50, unite: "g", categorie: "Légumes"},
-  "crevettes": {emoji: "🦐", calories: 90, quantite: 100, unite: "g", categorie: "Poissons"},
+  "cresson": {emoji: "🥬", calories: 6, quantite: 150, unite: "g", categorie: "Légumes"},
+  "crevettes": {emoji: "🦐", calories: 90, quantite: 120, unite: "g", categorie: "Poissons"},
   "croissant": {emoji: "🥐", calories: 203, quantite: 50, unite: "g", categorie: "Féculents / Céréales"},
   "cumin": {emoji: "🌰", calories: 19, quantite: 5, unite: "g", categorie: "Aromates / Épices"},
   "curcuma": {emoji: "🧂", calories: 3, quantite: 1, unite: "g", categorie: "Aromates / Épices"},
@@ -931,28 +932,28 @@
   "dorade": {emoji: "🐟", calories: 115, quantite: 120, unite: "g", categorie: "Poissons"},
   "eau": {emoji: "💧", calories: 0, quantite: 250, unite: "ml", categorie: "Boissons"},
   "échalote": {emoji: "🧅", calories: 22, quantite: 30, unite: "g", categorie: "Légumes"},
-  "écrevisse": {emoji: "🦞", calories: 77, quantite: 100, unite: "g", categorie: "Poissons"},
+  "écrevisse": {emoji: "🦞", calories: 77, quantite: 120, unite: "g", categorie: "Poissons"},
   "emmental": {emoji: "🧀", calories: 114, quantite: 30, unite: "g", categorie: "Produits laitiers"},
-  "endive": {emoji: "🥬", calories: 14, quantite: 80, unite: "g", categorie: "Légumes"},
+  "endive": {emoji: "🥬", calories: 14, quantite: 150, unite: "g", categorie: "Légumes"},
   "épeautre": {emoji: "🌾", calories: 203, quantite: 60, unite: "g", categorie: "Féculents / Céréales"},
-  "épinards": {emoji: "🥬", calories: 23, quantite: 100, unite: "g", categorie: "Légumes"},
-  "faisan": {emoji: "🐦", calories: 133, quantite: 100, unite: "g", categorie: "Viandes"},
+  "épinards": {emoji: "🥬", calories: 23, quantite: 150, unite: "g", categorie: "Légumes"},
+  "faisan": {emoji: "🐦", calories: 133, quantite: 150, unite: "g", categorie: "Viandes"},
   "farine": {emoji: "🌾", calories: 364, quantite: 100, unite: "g", categorie: "Féculents / Céréales"},
   "farine complète": {emoji: "🌾", calories: 332, quantite: 100, unite: "g", categorie: "Féculents / Céréales"},
-  "fenouil": {emoji: "🌿", calories: 31, quantite: 100, unite: "g", categorie: "Légumes"},
+  "fenouil": {emoji: "🌿", calories: 31, quantite: 150, unite: "g", categorie: "Légumes"},
   "feta": {emoji: "🧀", calories: 132, quantite: 50, unite: "g", categorie: "Produits laitiers"},
   "figue": {emoji: "🍈", calories: 37, quantite: 50, unite: "g", categorie: "Fruits"},
   "figue sèche": {emoji: "🍈", calories: 75, quantite: 30, unite: "g", categorie: "Fruits"},
-  "flageolets": {emoji: "🫛", calories: 90, quantite: 100, unite: "g", categorie: "Légumineuses"},
+  "flageolets": {emoji: "🫛", calories: 90, quantite: 150, unite: "g", categorie: "Légumineuses"},
   "flocons d'avoine": {emoji: "🥣", calories: 152, quantite: 40, unite: "g", categorie: "Féculents / Céréales"},
-  "foie de veau": {emoji: "🍖", calories: 140, quantite: 100, unite: "g", categorie: "Viandes"},
+  "foie de veau": {emoji: "🍖", calories: 140, quantite: 150, unite: "g", categorie: "Viandes"},
   "foie gras": {emoji: "🍖", calories: 139, quantite: 30, unite: "g", categorie: "Viandes"},
   "fraise": {emoji: "🍓", calories: 33, quantite: 100, unite: "g", categorie: "Fruits"},
   "framboise": {emoji: "🍓", calories: 52, quantite: 100, unite: "g", categorie: "Fruits"},
   "frites": {emoji: "🍟", calories: 468, quantite: 150, unite: "g", categorie: "Plats préparés"},
   "fromage blanc": {emoji: "🥛", calories: 75, quantite: 100, unite: "g", categorie: "Produits laitiers"},
   "fromage de chèvre": {emoji: "🧀", calories: 80, quantite: 30, unite: "g", categorie: "Produits laitiers"},
-  "fruits de mer": {emoji: "🦞", calories: 85, quantite: 100, unite: "g", categorie: "Poissons"},
+  "fruits de mer": {emoji: "🦞", calories: 85, quantite: 120, unite: "g", categorie: "Poissons"},
   "gâteau": {emoji: "🎂", calories: 350, quantite: 100, unite: "g", categorie: "Produits sucrés"},
   "gaufre": {emoji: "🧇", calories: 218, quantite: 75, unite: "g", categorie: "Produits sucrés"},
   "gingembre": {emoji: "🫚", calories: 8, quantite: 10, unite: "g", categorie: "Aromates / Épices"},
@@ -966,19 +967,19 @@
   "gruyère": {emoji: "🧀", calories: 124, quantite: 30, unite: "g", categorie: "Produits laitiers"},
   "hamburger": {emoji: "🍔", calories: 443, quantite: 150, unite: "g", categorie: "Plats préparés"},
   "hareng": {emoji: "🐟", calories: 158, quantite: 100, unite: "g", categorie: "Poissons"},
-  "haricot vert": {emoji: "🫛", calories: 31, quantite: 100, unite: "g", categorie: "Légumes"},
-  "haricots blancs": {emoji: "🫘", calories: 266, quantite: 80, unite: "g", categorie: "Légumineuses"},
-  "haricots rouges": {emoji: "🫘", calories: 266, quantite: 80, unite: "g", categorie: "Légumineuses"},
+  "haricot vert": {emoji: "🫛", calories: 31, quantite: 150, unite: "g", categorie: "Légumes"},
+  "haricots blancs": {emoji: "🫘", calories: 266, quantite: 100, unite: "g", categorie: "Légumineuses"},
+  "haricots rouges": {emoji: "🫘", calories: 266, quantite: 100, unite: "g", categorie: "Légumineuses"},
   "homard": {emoji: "🦞", calories: 134, quantite: 150, unite: "g", categorie: "Poissons"},
   "huile d'olive": {emoji: "🫒", calories: 90, quantite: 10, unite: "ml", categorie: "Matières grasses"},
   "huile de coco": {emoji: "🥥", calories: 90, quantite: 10, unite: "ml", categorie: "Matières grasses"},
   "huile de tournesol": {emoji: "🌻", calories: 90, quantite: 10, unite: "ml", categorie: "Matières grasses"},
   "huîtres": {emoji: "🦪", calories: 69, quantite: 100, unite: "g", categorie: "Poissons"},
   "infusion": {emoji: "☕", calories: 2, quantite: 200, unite: "ml", categorie: "Boissons"},
-  "jambon blanc": {emoji: "🥓", calories: 58, quantite: 50, unite: "g", categorie: "Viandes"},
-  "jambon cru": {emoji: "🥓", calories: 48, quantite: 30, unite: "g", categorie: "Viandes"},
-  "jus d'orange": {emoji: "🧃", calories: 90, quantite: 200, unite: "ml", categorie: "Boissons"},
-  "jus de pomme": {emoji: "🧃", calories: 92, quantite: 200, unite: "ml", categorie: "Boissons"},
+  "jambon blanc": {emoji: "🥓", calories: 58, quantite: 150, unite: "g", categorie: "Viandes"},
+  "jambon cru": {emoji: "🥓", calories: 48, quantite: 100, unite: "g", categorie: "Viandes"},
+  "jus d'orange": {emoji: "🧃", calories: 90, quantite: 125, unite: "ml", categorie: "Boissons"},
+  "jus de pomme": {emoji: "🧃", calories: 92, quantite: 125, unite: "ml", categorie: "Boissons"},
   "kaki": {emoji: "🍑", calories: 70, quantite: 100, unite: "g", categorie: "Fruits"},
   "kéfir": {emoji: "🥛", calories: 75, quantite: 125, unite: "g", categorie: "Produits laitiers"},
   "ketchup": {emoji: "🍅", calories: 17, quantite: 15, unite: "g", categorie: "Condiments"},
@@ -990,33 +991,33 @@
   "lait de coco": {emoji: "🥥", calories: 230, quantite: 100, unite: "ml", categorie: "Boissons"},
   "lait de soja": {emoji: "🥛", calories: 108, quantite: 200, unite: "ml", categorie: "Boissons"},
   "langouste": {emoji: "🦞", calories: 135, quantite: 150, unite: "g", categorie: "Poissons"},
-  "langoustine": {emoji: "🦐", calories: 84, quantite: 100, unite: "g", categorie: "Poissons"},
-  "lapin": {emoji: "🐇", calories: 173, quantite: 100, unite: "g", categorie: "Viandes"},
+  "langoustine": {emoji: "🦐", calories: 84, quantite: 120, unite: "g", categorie: "Poissons"},
+  "lapin": {emoji: "🐇", calories: 173, quantite: 150, unite: "g", categorie: "Viandes"},
   "lard": {emoji: "🥓", calories: 201, quantite: 30, unite: "g", categorie: "Viandes"},
   "laurier": {emoji: "🌿", calories: 12, quantite: 2, unite: "g", categorie: "Aromates / Épices"},
-  "lentilles corail": {emoji: "🫘", calories: 93, quantite: 80, unite: "g", categorie: "Légumineuses"},
-  "lentilles vertes": {emoji: "🫘", calories: 93, quantite: 80, unite: "g", categorie: "Légumineuses"},
-  "lièvre": {emoji: "🐇", calories: 114, quantite: 100, unite: "g", categorie: "Viandes"},
+  "lentilles corail": {emoji: "🫘", calories: 93, quantite: 100, unite: "g", categorie: "Légumineuses"},
+  "lentilles vertes": {emoji: "🫘", calories: 93, quantite: 100, unite: "g", categorie: "Légumineuses"},
+  "lièvre": {emoji: "🐇", calories: 114, quantite: 150, unite: "g", categorie: "Viandes"},
   "lieu": {emoji: "🐟", calories: 110, quantite: 120, unite: "g", categorie: "Poissons"},
   "limonade": {emoji: "🥤", calories: 103, quantite: 250, unite: "ml", categorie: "Boissons"},
   "litchi": {emoji: "🍈", calories: 66, quantite: 100, unite: "g", categorie: "Fruits"},
   "maïs": {emoji: "🌽", calories: 86, quantite: 100, unite: "g", categorie: "Légumes"},
-  "mandarine": {emoji: "🍊", calories: 42, quantite: 80, unite: "g", categorie: "Fruits"},
+  "mandarine": {emoji: "🍊", calories: 42, quantite: 100, unite: "g", categorie: "Fruits"},
   "mangue": {emoji: "🥭", calories: 90, quantite: 150, unite: "g", categorie: "Fruits"},
   "manioc": {emoji: "🍠", calories: 160, quantite: 100, unite: "g", categorie: "Féculents / Céréales"},
-  "maquereau": {emoji: "🐟", calories: 205, quantite: 100, unite: "g", categorie: "Poissons"},
+  "maquereau": {emoji: "🐟", calories: 205, quantite: 120, unite: "g", categorie: "Poissons"},
   "margarine": {emoji: "🧈", calories: 72, quantite: 10, unite: "g", categorie: "Matières grasses"},
-  "marron": {emoji: "🌰", calories: 98, quantite: 50, unite: "g", categorie: "Fruits à coque"},
+  "marron": {emoji: "🌰", calories: 98, quantite: 150, unite: "g", categorie: "Fruits à coque"},
   "mascarpone": {emoji: "🧀", calories: 215, quantite: 50, unite: "g", categorie: "Produits laitiers"},
   "mayonnaise": {emoji: "🥫", calories: 105, quantite: 15, unite: "g", categorie: "Condiments"},
   "melon": {emoji: "🍈", calories: 68, quantite: 200, unite: "g", categorie: "Fruits"},
   "menthe": {emoji: "🌿", calories: 4, quantite: 5, unite: "g", categorie: "Aromates / Épices"},
-  "merguez": {emoji: "🌭", calories: 300, quantite: 100, unite: "g", categorie: "Viandes"},
+  "merguez": {emoji: "🌭", calories: 300, quantite: 150, unite: "g", categorie: "Viandes"},
   "merlan": {emoji: "🐟", calories: 91, quantite: 120, unite: "g", categorie: "Poissons"},
   "miel": {emoji: "🍯", calories: 30, quantite: 10, unite: "g", categorie: "Produits sucrés"},
   "millet": {emoji: "🌾", calories: 227, quantite: 60, unite: "g", categorie: "Féculents / Céréales"},
   "morue": {emoji: "🐟", calories: 98, quantite: 120, unite: "g", categorie: "Poissons"},
-  "moules": {emoji: "🐚", calories: 129, quantite: 150, unite: "g", categorie: "Poissons"},
+  "moules": {emoji: "🐚", calories: 129, quantite: 250, unite: "g", categorie: "Poissons"},
   "moutarde": {emoji: "🍯", calories: 7, quantite: 10, unite: "g", categorie: "Condiments"},
   "mozzarella": {emoji: "🧀", calories: 140, quantite: 50, unite: "g", categorie: "Produits laitiers"},
   "muesli": {emoji: "🥣", calories: 185, quantite: 50, unite: "g", categorie: "Féculents / Céréales"},
@@ -1029,50 +1030,50 @@
   "noix de cajou": {emoji: "🥜", calories: 166, quantite: 30, unite: "g", categorie: "Fruits à coque"},
   "noix de pécan": {emoji: "🌰", calories: 207, quantite: 30, unite: "g", categorie: "Fruits à coque"},
   "nutella": {emoji: "🍫", calories: 108, quantite: 20, unite: "g", categorie: "Produits sucrés"},
-  "œuf": {emoji: "🥚", calories: 145, quantite: 60, unite: "g", categorie: "Œufs"},
+  "œuf": {emoji: "🥚", calories: 145, quantite: 180, unite: "g", categorie: "Œufs"},
   "oignon": {emoji: "🧅", calories: 32, quantite: 80, unite: "g", categorie: "Légumes"},
-  "olive noire": {emoji: "🫒", calories: 23, quantite: 20, unite: "g", categorie: "Légumes"},
-  "olive verte": {emoji: "🫒", calories: 29, quantite: 20, unite: "g", categorie: "Légumes"},
+  "olive noire": {emoji: "🫒", calories: 23, quantite: 50, unite: "g", categorie: "Légumes"},
+  "olive verte": {emoji: "🫒", calories: 29, quantite: 50, unite: "g", categorie: "Légumes"},
   "orange": {emoji: "🍊", calories: 71, quantite: 150, unite: "g", categorie: "Fruits"},
-  "orge": {emoji: "🌾", calories: 211, quantite: 60, unite: "g", categorie: "Féculents / Céréales"},
+  "orge": {emoji: "🌾", calories: 211, quantite: 100, unite: "g", categorie: "Féculents / Céréales"},
   "origan": {emoji: "🌿", calories: 5, quantite: 2, unite: "g", categorie: "Aromates / Épices"},
   "pain blanc": {emoji: "🍞", calories: 133, quantite: 50, unite: "g", categorie: "Féculents / Céréales"},
   "pain complet": {emoji: "🍞", calories: 124, quantite: 50, unite: "g", categorie: "Féculents / Céréales"},
   "pain de mie": {emoji: "🍞", calories: 81, quantite: 30, unite: "g", categorie: "Féculents / Céréales"},
   "pain de seigle": {emoji: "🍞", calories: 130, quantite: 50, unite: "g", categorie: "Féculents / Céréales"},
   "pamplemousse": {emoji: "🍊", calories: 63, quantite: 150, unite: "g", categorie: "Fruits"},
-  "panais": {emoji: "🥕", calories: 75, quantite: 100, unite: "g", categorie: "Légumes"},
+  "panais": {emoji: "🥕", calories: 75, quantite: 150, unite: "g", categorie: "Légumes"},
   "papaye": {emoji: "🍈", calories: 65, quantite: 150, unite: "g", categorie: "Fruits"},
   "paprika": {emoji: "🌶️", calories: 14, quantite: 5, unite: "g", categorie: "Aromates / Épices"},
   "parmesan": {emoji: "🧀", calories: 43, quantite: 10, unite: "g", categorie: "Produits laitiers"},
   "pastèque": {emoji: "🍉", calories: 60, quantite: 200, unite: "g", categorie: "Fruits"},
   "patate douce": {emoji: "🍠", calories: 129, quantite: 150, unite: "g", categorie: "Légumes"},
   "pâte à tartiner": {emoji: "🍫", calories: 108, quantite: 20, unite: "g", categorie: "Produits sucrés"},
-  "pâtes": {emoji: "🍝", calories: 297, quantite: 80, unite: "g", categorie: "Féculents / Céréales"},
-  "pâtes complètes": {emoji: "🍝", calories: 278, quantite: 80, unite: "g", categorie: "Féculents / Céréales"},
+  "pâtes": {emoji: "🍝", calories: 297, quantite: 100, unite: "g", categorie: "Féculents / Céréales"},
+  "pâtes complètes": {emoji: "🍝", calories: 278, quantite: 100, unite: "g", categorie: "Féculents / Céréales"},
   "pâtisserie": {emoji: "🍰", calories: 400, quantite: 100, unite: "g", categorie: "Produits sucrés"},
   "pêche": {emoji: "🍑", calories: 59, quantite: 150, unite: "g", categorie: "Fruits"},
   "perche": {emoji: "🐟", calories: 109, quantite: 120, unite: "g", categorie: "Poissons"},
   "persil": {emoji: "🌿", calories: 4, quantite: 10, unite: "g", categorie: "Aromates / Épices"},
-  "petit pois": {emoji: "🫛", calories: 81, quantite: 100, unite: "g", categorie: "Légumes"},
+  "petit pois": {emoji: "🫛", calories: 81, quantite: 150, unite: "g", categorie: "Légumes"},
   "petits suisses": {emoji: "🥛", calories: 69, quantite: 60, unite: "g", categorie: "Produits laitiers"},
   "pickles": {emoji: "🥒", calories: 2, quantite: 20, unite: "g", categorie: "Condiments"},
   "pignons de pin": {emoji: "🌰", calories: 135, quantite: 20, unite: "g", categorie: "Fruits à coque"},
-  "pintade": {emoji: "🐦", calories: 110, quantite: 100, unite: "g", categorie: "Viandes"},
+  "pintade": {emoji: "🐦", calories: 110, quantite: 150, unite: "g", categorie: "Viandes"},
   "pistache": {emoji: "🥜", calories: 169, quantite: 30, unite: "g", categorie: "Fruits à coque"},
   "pizza": {emoji: "🍕", calories: 532, quantite: 200, unite: "g", categorie: "Plats préparés"},
   "plie": {emoji: "🐟", calories: 109, quantite: 120, unite: "g", categorie: "Poissons"},
   "poire": {emoji: "🍐", calories: 86, quantite: 150, unite: "g", categorie: "Fruits"},
   "poireau": {emoji: "🥬", calories: 92, quantite: 150, unite: "g", categorie: "Légumes"},
-  "pois cassés": {emoji: "🫛", calories: 282, quantite: 80, unite: "g", categorie: "Légumineuses"},
-  "pois chiches": {emoji: "🫛", calories: 291, quantite: 80, unite: "g", categorie: "Légumineuses"},
-  "poisson pané": {emoji: "🐟", calories: 200, quantite: 100, unite: "g", categorie: "Plats préparés"},
+  "pois cassés": {emoji: "🫛", calories: 282, quantite: 100, unite: "g", categorie: "Légumineuses"},
+  "pois chiches": {emoji: "🫛", calories: 291, quantite: 100, unite: "g", categorie: "Légumineuses"},
+  "poisson pané": {emoji: "🐟", calories: 200, quantite: 125, unite: "g", categorie: "Plats préparés"},
   "poivre": {emoji: "🧂", calories: 0, quantite: 1, unite: "g", categorie: "Aromates / Épices"},
   "poivron": {emoji: "🫑", calories: 20, quantite: 100, unite: "g", categorie: "Légumes"},
   "polenta": {emoji: "🌾", calories: 286, quantite: 80, unite: "g", categorie: "Féculents / Céréales"},
   "pomme": {emoji: "🍎", calories: 78, quantite: 150, unite: "g", categorie: "Fruits"},
   "pomme de terre": {emoji: "🥔", calories: 116, quantite: 150, unite: "g", categorie: "Légumes"},
-  "porc": {emoji: "🐷", calories: 242, quantite: 100, unite: "g", categorie: "Viandes"},
+  "porc": {emoji: "🐷", calories: 242, quantite: 150, unite: "g", categorie: "Viandes"},
   "pop-corn": {emoji: "🍿", calories: 116, quantite: 30, unite: "g", categorie: "Snacks"},
   "potimarron": {emoji: "🎃", calories: 48, quantite: 150, unite: "g", categorie: "Légumes"},
   "potiron": {emoji: "🎃", calories: 30, quantite: 150, unite: "g", categorie: "Légumes"},
@@ -1081,9 +1082,9 @@
   "prune": {emoji: "🍑", calories: 28, quantite: 60, unite: "g", categorie: "Fruits"},
   "pruneau": {emoji: "🍑", calories: 72, quantite: 30, unite: "g", categorie: "Fruits"},
   "purée": {emoji: "🥔", calories: 125, quantite: 150, unite: "g", categorie: "Légumes"},
-  "quinoa": {emoji: "🌾", calories: 221, quantite: 60, unite: "g", categorie: "Féculents / Céréales"},
-  "radis": {emoji: "🌶️", calories: 8, quantite: 50, unite: "g", categorie: "Légumes"},
-  "radis noir": {emoji: "⚫", calories: 9, quantite: 50, unite: "g", categorie: "Légumes"},
+  "quinoa": {emoji: "🌾", calories: 221, quantite: 100, unite: "g", categorie: "Féculents / Céréales"},
+  "radis": {emoji: "🌶️", calories: 8, quantite: 80, unite: "g", categorie: "Légumes"},
+  "radis noir": {emoji: "⚫", calories: 9, quantite: 80, unite: "g", categorie: "Légumes"},
   "raifort": {emoji: "🥬", calories: 5, quantite: 10, unite: "g", categorie: "Condiments"},
   "raisin blanc": {emoji: "🍇", calories: 69, quantite: 100, unite: "g", categorie: "Fruits"},
   "raisin noir": {emoji: "🍇", calories: 70, quantite: 100, unite: "g", categorie: "Fruits"},
@@ -1097,24 +1098,24 @@
   "riz complet": {emoji: "🍚", calories: 167, quantite: 150, unite: "g", categorie: "Féculents / Céréales"},
   "roquefort": {emoji: "🧀", calories: 111, quantite: 30, unite: "g", categorie: "Produits laitiers"},
   "romarin": {emoji: "🌿", calories: 3, quantite: 1, unite: "g", categorie: "Aromates / Épices"},
-  "rôti de bœuf": {emoji: "🥩", calories: 190, quantite: 100, unite: "g", categorie: "Viandes"},
-  "rutabaga": {emoji: "🥕", calories: 37, quantite: 100, unite: "g", categorie: "Légumes"},
+  "rôti de bœuf": {emoji: "🥩", calories: 190, quantite: 150, unite: "g", categorie: "Viandes"},
+  "rutabaga": {emoji: "🥕", calories: 37, quantite: 150, unite: "g", categorie: "Légumes"},
   "sablé": {emoji: "🍪", calories: 99, quantite: 20, unite: "g", categorie: "Produits sucrés"},
-  "salade": {emoji: "🥗", calories: 15, quantite: 100, unite: "g", categorie: "Légumes"},
+  "salade": {emoji: "🥗", calories: 15, quantite: 150, unite: "g", categorie: "Légumes"},
   "salami": {emoji: "🍖", calories: 122, quantite: 30, unite: "g", categorie: "Viandes"},
-  "sandre": {emoji: "🐟", calories: 101, quantite: 120, unite: "g", categorie: "Poissons"},
-  "sanglier": {emoji: "🐗", calories: 122, quantite: 100, unite: "g", categorie: "Viandes"},
+  "sandre": {emoji: "🐟", calories: 101, quantite: 150, unite: "g", categorie: "Poissons"},
+  "sanglier": {emoji: "🐗", calories: 122, quantite: 150, unite: "g", categorie: "Viandes"},
   "sardine": {emoji: "🐟", calories: 166, quantite: 80, unite: "g", categorie: "Poissons"},
   "sauce soja": {emoji: "🥫", calories: 6, quantite: 10, unite: "ml", categorie: "Condiments"},
   "sauce tomate": {emoji: "🍅", calories: 32, quantite: 100, unite: "g", categorie: "Condiments"},
-  "saucisse": {emoji: "🌭", calories: 301, quantite: 100, unite: "g", categorie: "Viandes"},
+  "saucisse": {emoji: "🌭", calories: 301, quantite: 150, unite: "g", categorie: "Viandes"},
   "saucisson": {emoji: "🍖", calories: 143, quantite: 30, unite: "g", categorie: "Viandes"},
   "saumon": {emoji: "🐟", calories: 250, quantite: 120, unite: "g", categorie: "Poissons"},
   "saumon fumé": {emoji: "🐟", calories: 59, quantite: 50, unite: "g", categorie: "Poissons"},
   "sauge": {emoji: "🌿", calories: 6, quantite: 2, unite: "g", categorie: "Aromates / Épices"},
-  "scarole": {emoji: "🥬", calories: 17, quantite: 100, unite: "g", categorie: "Légumes"},
+  "scarole": {emoji: "🥬", calories: 17, quantite: 150, unite: "g", categorie: "Légumes"},
   "sel": {emoji: "🧂", calories: 0, quantite: 5, unite: "g", categorie: "Condiments"},
-  "semoule": {emoji: "🌾", calories: 216, quantite: 60, unite: "g", categorie: "Féculents / Céréales"},
+  "semoule": {emoji: "🌾", calories: 216, quantite: 100, unite: "g", categorie: "Féculents / Céréales"},
   "sésame": {emoji: "🌰", calories: 57, quantite: 10, unite: "g", categorie: "Aromates / Épices"},
   "sirop d'agave": {emoji: "🍯", calories: 31, quantite: 10, unite: "g", categorie: "Produits sucrés"},
   "sirop d'érable": {emoji: "🍯", calories: 39, quantite: 15, unite: "g", categorie: "Produits sucrés"},
@@ -1124,14 +1125,14 @@
   "sorbet": {emoji: "🍨", calories: 132, quantite: 100, unite: "g", categorie: "Produits sucrés"},
   "sorgho": {emoji: "🌾", calories: 203, quantite: 60, unite: "g", categorie: "Féculents / Céréales"},
   "soupe": {emoji: "🍲", calories: 100, quantite: 250, unite: "ml", categorie: "Plats préparés"},
-  "spaghetti": {emoji: "🍝", calories: 297, quantite: 80, unite: "g", categorie: "Féculents / Céréales"},
-  "steak haché": {emoji: "🥩", calories: 250, quantite: 100, unite: "g", categorie: "Viandes"},
+  "spaghetti": {emoji: "🍝", calories: 297, quantite: 100, unite: "g", categorie: "Féculents / Céréales"},
+  "steak haché": {emoji: "🥩", calories: 250, quantite: 150, unite: "g", categorie: "Viandes"},
   "sucre blanc": {emoji: "🍚", calories: 20, quantite: 5, unite: "g", categorie: "Produits sucrés"},
   "sucre de canne": {emoji: "🍚", calories: 20, quantite: 5, unite: "g", categorie: "Produits sucrés"},
   "sucre roux": {emoji: "🍚", calories: 20, quantite: 5, unite: "g", categorie: "Produits sucrés"},
   "surimi": {emoji: "🦀", calories: 50, quantite: 50, unite: "g", categorie: "Poissons"},
   "tabasco": {emoji: "🌶️", calories: 0, quantite: 2, unite: "ml", categorie: "Condiments"},
-  "tagliatelles": {emoji: "🍝", calories: 297, quantite: 80, unite: "g", categorie: "Féculents / Céréales"},
+  "tagliatelles": {emoji: "🍝", calories: 297, quantite: 100, unite: "g", categorie: "Féculents / Céréales"},
   "tahini": {emoji: "🥜", calories: 119, quantite: 20, unite: "g", categorie: "Matières grasses"},
   "tapioca": {emoji: "🍚", calories: 215, quantite: 60, unite: "g", categorie: "Féculents / Céréales"},
   "tapenade": {emoji: "🫒", calories: 43, quantite: 20, unite: "g", categorie: "Condiments"},
@@ -1145,12 +1146,12 @@
   "tomate": {emoji: "🍅", calories: 27, quantite: 150, unite: "g", categorie: "Légumes"},
   "tomate cerise": {emoji: "🍅", calories: 18, quantite: 100, unite: "g", categorie: "Légumes"},
   "tomate séchée": {emoji: "🍅", calories: 52, quantite: 20, unite: "g", categorie: "Légumes"},
-  "topinambour": {emoji: "🥔", calories: 73, quantite: 100, unite: "g", categorie: "Légumes"},
-  "tortilla": {emoji: "🌮", calories: 156, quantite: 50, unite: "g", categorie: "Féculents / Céréales"},
+  "topinambour": {emoji: "🥔", calories: 73, quantite: 150, unite: "g", categorie: "Légumes"},
+  "tortilla": {emoji: "🌮", calories: 156, quantite: 150, unite: "g", categorie: "Féculents / Céréales"},
   "tournesol (graines)": {emoji: "🌻", calories: 117, quantite: 20, unite: "g", categorie: "Fruits à coque"},
   "truite": {emoji: "🐟", calories: 143, quantite: 120, unite: "g", categorie: "Poissons"},
   "turbot": {emoji: "🐟", calories: 114, quantite: 120, unite: "g", categorie: "Poissons"},
-  "veau": {emoji: "🍖", calories: 172, quantite: 100, unite: "g", categorie: "Viandes"},
+  "veau": {emoji: "🍖", calories: 172, quantite: 150, unite: "g", categorie: "Viandes"},
   "vinaigre": {emoji: "🍾", calories: 2, quantite: 10, unite: "ml", categorie: "Condiments"},
   "vinaigre balsamique": {emoji: "🍾", calories: 9, quantite: 10, unite: "ml", categorie: "Condiments"},
   "wasabi": {emoji: "🟢", calories: 5, quantite: 5, unite: "g", categorie: "Condiments"},
@@ -1820,16 +1821,18 @@ function genererMenuEquilibre() {
         }
     });
 
-    // ========== CALCUL DES CALORIES ET AJUSTEMENT AVEC PAIN ==========
+  // ========== CALCUL DES CALORIES ET AJUSTEMENT AVEC PAIN + JUS ==========
 const caloriesMin = 1500;
 const caloriesMax = 1700;
 const margeMin = 250;
 const margeMax = 350;
-const caloriesPainParTranche = 80; // 1 tranche de pain complet ~80 kcal
+const caloriesPainPar30g = 80; // ~80 kcal pour 30g de pain complet
+const caloriesJusPomme = 92;   // 92 kcal pour 200ml de jus de pomme
+const PAIN_MAX_PAR_REPAS = 30; // Limite stricte : 30g max par repas
 
 JOURS.forEach(jour => {
-    // Petit-déjeuner fixe (déjà inclus)
-    const caloriesPetitDej = 2 + 120 + 75; // Café + pain + beurre
+    // Petit-déjeuner fixe (déjà inclus avec 50g de pain)
+    const caloriesPetitDej = 2 + 133 + 72; // Café + pain 50g + beurre = 207 kcal
 
     // Déjeuner
     const caloriesDejeuner = calculerCaloriesRepas(menus[jour]["Déjeuner"]);
@@ -1837,46 +1840,92 @@ JOURS.forEach(jour => {
     // Dîner
     const caloriesDiner = calculerCaloriesRepas(menus[jour]["Dîner"]);
 
-    // Total sans pain supplémentaire
+    // Total sans marge ni complément
     let totalSansMarge = caloriesPetitDej + caloriesDejeuner + caloriesDiner;
 
     // Calcul du déficit calorique
     let deficit = caloriesMin - totalSansMarge;
 
-    // Si déficit > 0, ajouter du pain au déjeuner et/ou dîner
+    console.log(`📊 ${jour} - Calories: ${totalSansMarge} kcal | Déficit: ${deficit} kcal`);
+
+    // Si déficit > 0, on complète intelligemment
     if (deficit > 0) {
-        const tranchesNecessaires = Math.ceil(deficit / caloriesPainParTranche);
-        const tranchesParRepas = Math.floor(tranchesNecessaires / 2); // Répartir entre déjeuner et dîner
+        let deficitRestant = deficit;
 
-        // Ajouter au déjeuner
-        if (tranchesParRepas > 0) {
-            menus[jour]["Déjeuner"].push({
-                nom: "pain complet",
-                quantite: tranchesParRepas * 30 // 30g par tranche
-            });
+        // 1️⃣ Ajout de pain au DÉJEUNER (max 30g)
+        if (deficitRestant > 0) {
+            const painDejQuantite = Math.min(PAIN_MAX_PAR_REPAS, Math.ceil(deficitRestant / caloriesPainPar30g) * 30);
+            if (painDejQuantite > 0) {
+                menus[jour]["Déjeuner"].push({
+                    nom: "pain complet",
+                    quantite: painDejQuantite
+                });
+                const caloriesAjoutees = Math.round((painDejQuantite / 30) * caloriesPainPar30g);
+                deficitRestant -= caloriesAjoutees;
+                console.log(`  ➕ Pain déjeuner: ${painDejQuantite}g (${caloriesAjoutees} kcal)`);
+            }
         }
 
-        // Ajouter au dîner (si besoin)
-        if (tranchesNecessaires > tranchesParRepas) {
-            menus[jour]["Dîner"].push({
-                nom: "pain complet",
-                quantite: (tranchesNecessaires - tranchesParRepas) * 30
-            });
+        // 2️⃣ Ajout de pain au DÎNER (max 30g)
+        if (deficitRestant > 0) {
+            const painDinQuantite = Math.min(PAIN_MAX_PAR_REPAS, Math.ceil(deficitRestant / caloriesPainPar30g) * 30);
+            if (painDinQuantite > 0) {
+                menus[jour]["Dîner"].push({
+                    nom: "pain complet",
+                    quantite: painDinQuantite
+                });
+                const caloriesAjoutees = Math.round((painDinQuantite / 30) * caloriesPainPar30g);
+                deficitRestant -= caloriesAjoutees;
+                console.log(`  ➕ Pain dîner: ${painDinQuantite}g (${caloriesAjoutees} kcal)`);
+            }
         }
 
-        // Recalculer le total après ajout du pain
-        totalSansMarge = caloriesPetitDej + calculerCaloriesRepas(menus[jour]["Déjeuner"]) + calculerCaloriesRepas(menus[jour]["Dîner"]);
+        // 3️⃣ Complément avec JUS DE POMME si déficit restant
+        if (deficitRestant > 0) {
+            // Calcul du nombre de portions de 200ml nécessaires
+            const portionsJus = Math.ceil(deficitRestant / caloriesJusPomme);
+            const quantiteJus = portionsJus * 200;
+
+            // Répartir entre déjeuner et dîner
+            const jusDej = Math.ceil(quantiteJus / 2);
+            const jusDin = quantiteJus - jusDej;
+
+            if (jusDej > 0) {
+                menus[jour]["Déjeuner"].push({
+                    nom: "jus de pomme",
+                    quantite: jusDej
+                });
+                console.log(`  ➕ Jus déjeuner: ${jusDej}ml`);
+            }
+
+            if (jusDin > 0) {
+                menus[jour]["Dîner"].push({
+                    nom: "jus de pomme",
+                    quantite: jusDin
+                });
+                console.log(`  ➕ Jus dîner: ${jusDin}ml`);
+            }
+
+            deficitRestant = 0; // Complètement compensé
+        }
+
+        // Recalculer le total après ajout
+        totalSansMarge = caloriesPetitDej + 
+                       calculerCaloriesRepas(menus[jour]["Déjeuner"]) + 
+                       calculerCaloriesRepas(menus[jour]["Dîner"]);
     }
 
     // Marge calculée (250–350 kcal)
-    const marge = Math.max(margeMin, Math.min(margeMax, caloriesMin - totalSansMarge));
+    const marge = Math.max(margeMin, Math.min(margeMax, caloriesMax - totalSansMarge));
 
     // Ajout de la marge au menu
     menus[jour]["Marge"] = {
         description: `Marge pour desserts, boissons ou petits plaisirs : ${marge} kcal.`,
         calories: marge
     };
-});
+
+    console.log(`  ✅ Total final: ${totalSansMarge} kcal | Marge: ${marge} kcal`);
+});  
 
 // ========== AFFICHAGE ET SAUVEGARDE ==========
 afficherCalendrier();
@@ -1887,36 +1936,281 @@ const totalSemaine = calculerTotalSemaine();
 const moyenne = Math.round(totalSemaine / 7);
 alert(`✅ Menu équilibré généré avec succès !\n\n📊 Total semaine : ${totalSemaine} kcal\n📈 Moyenne/jour : ${moyenne} kcal\n\n💡 Une marge de 250–350 kcal/jour est prévue pour vos desserts et boissons.`);
       }
-	  function afficherMenu(menu, type) {
-    // Sauvegarder le menu généré dans localStorage
-    const monRegimeData = JSON.parse(localStorage.getItem('monRegimeData')) || {};
-    monRegimeData[type] = menu;
-    localStorage.setItem('monRegimeData', JSON.stringify(monRegimeData));
+	 // ========================================
+// FONCTION MENU ENVIES - VERSION CORRIGÉE
+// ========================================
 
-    // Recharger la page pour afficher le menu
-    window.location.reload();
-}
-	  // Fonction pour générer un menu basé sur les envies
 function genererMenuEnvies() {
-    // 1. Récupérer les données depuis localStorage
-    const monRegimeData = JSON.parse(localStorage.getItem('monRegimeData')) || {};
-    const listeEnvies = monRegimeData.envies || [];
-
-    // 2. Vérifier si la liste des envies est vide
-    if (listeEnvies.length === 0) {
-        alert("Votre liste d'envies est vide. Ajoutez des aliments avant de générer un menu.");
+    // Vérifier qu'il y a des envies
+    if (!envies || envies.length === 0) {
+        alert("⚠️ Votre liste d'envies est vide !\n\nAjoutez des aliments dans 'Mes Envies' avant de générer un menu.");
         return;
     }
 
-    // 3. Générer un menu aléatoire pour 7 jours
-    const menuSemaine = [];
-    for (let jour = 0; jour < 7; jour++) {
-        const platAleatoire = listeEnvies[Math.floor(Math.random() * listeEnvies.length)];
-        menuSemaine.push(platAleatoire);
+    // Confirmation avant de remplacer
+    if (!confirm('⚠️ Cela va remplacer tous vos menus actuels par des menus basés sur vos envies. Continuer ?')) {
+        return;
     }
 
-    // 4. Afficher le menu généré
-    afficherMenu(menuSemaine, 'menu-envies');
+    console.log("💖 Génération d'un menu basé sur vos envies...");
+    console.log("📋 Envies disponibles :", envies);
+
+    // 1️⃣ CATÉGORISER LES ENVIES
+    const enviesParCategorie = {
+        proteines: [],
+        feculents: [],
+        legumes: [],
+        fruits: [],
+        autres: []
+    };
+
+    envies.forEach(nom => {
+        const aliment = ALIMENTS[nom];
+        if (!aliment) return;
+
+        const cat = aliment.categorie;
+        if (['Viandes', 'Poissons', 'Œufs', 'Protéines végétales'].includes(cat)) {
+            enviesParCategorie.proteines.push(nom);
+        } else if (cat === 'Féculents / Céréales') {
+            enviesParCategorie.feculents.push(nom);
+        } else if (cat === 'Légumes') {
+            enviesParCategorie.legumes.push(nom);
+        } else if (cat === 'Fruits') {
+            enviesParCategorie.fruits.push(nom);
+        } else {
+            enviesParCategorie.autres.push(nom);
+        }
+    });
+
+    console.log("📊 Catégorisation des envies :", enviesParCategorie);
+
+    // 2️⃣ VÉRIFICATIONS
+    if (enviesParCategorie.proteines.length === 0) {
+        alert("⚠️ Ajoutez au moins une protéine (viande, poisson, œuf) dans vos envies pour générer un menu équilibré.");
+        return;
+    }
+
+    // 3️⃣ FONCTION POUR CHOISIR UN ALIMENT AVEC ROTATION
+    const alimentsUtilises = {
+        proteines: [],
+        feculents: [],
+        legumes: [],
+        fruits: []
+    };
+
+    function choisirDansEnvies(categorie) {
+        const liste = enviesParCategorie[categorie];
+        if (!liste || liste.length === 0) return null;
+
+        // Filtrer ceux déjà utilisés
+        let disponibles = liste.filter(a => !alimentsUtilises[categorie].includes(a));
+        
+        // Si tous ont été utilisés, on réinitialise
+        if (disponibles.length === 0) {
+            alimentsUtilises[categorie] = [];
+            disponibles = [...liste];
+        }
+
+        // Choix aléatoire
+        const choix = disponibles[Math.floor(Math.random() * disponibles.length)];
+        alimentsUtilises[categorie].push(choix);
+        return choix;
+    }
+
+    // 4️⃣ GÉNÉRATION DES MENUS
+    JOURS.forEach((jour, indexJour) => {
+        console.log(`📅 Génération du menu pour ${jour}...`);
+
+        // ========== PETIT DÉJEUNER FIXE ==========
+        menus[jour]["Petit déjeuner"] = [
+            {nom: "café", quantite: 200},
+            {nom: "pain complet", quantite: 50},
+            {nom: "beurre", quantite: 10}
+        ];
+
+        // ========== DÉJEUNER ==========
+        const proteineDej = choisirDansEnvies('proteines');
+        const feculentDej = choisirDansEnvies('feculents');
+        const legumeDej = choisirDansEnvies('legumes');
+        const fruitDej = choisirDansEnvies('fruits');
+
+        menus[jour]["Déjeuner"] = [
+            {nom: proteineDej, quantite: ALIMENTS[proteineDej].quantite}
+        ];
+
+        if (feculentDej) {
+            menus[jour]["Déjeuner"].push({
+                nom: feculentDej, 
+                quantite: ALIMENTS[feculentDej].quantite
+            });
+        }
+
+        if (legumeDej) {
+            menus[jour]["Déjeuner"].push({
+                nom: legumeDej, 
+                quantite: ALIMENTS[legumeDej].quantite
+            });
+        }
+
+        if (fruitDej) {
+            menus[jour]["Déjeuner"].push({
+                nom: fruitDej, 
+                quantite: ALIMENTS[fruitDej].quantite
+            });
+        }
+
+        // ========== DÎNER ==========
+        const proteineDin = choisirDansEnvies('proteines');
+        const legumeDin1 = choisirDansEnvies('legumes');
+        const legumeDin2 = choisirDansEnvies('legumes');
+        const fruitDin = choisirDansEnvies('fruits');
+
+        menus[jour]["Dîner"] = [
+            {nom: proteineDin, quantite: Math.round(ALIMENTS[proteineDin].quantite * 0.8)}
+        ];
+
+        if (legumeDin1) {
+            menus[jour]["Dîner"].push({
+                nom: legumeDin1, 
+                quantite: ALIMENTS[legumeDin1].quantite
+            });
+        }
+
+        if (legumeDin2 && legumeDin2 !== legumeDin1) {
+            menus[jour]["Dîner"].push({
+                nom: legumeDin2, 
+                quantite: ALIMENTS[legumeDin2].quantite
+            });
+        }
+
+        if (fruitDin) {
+            menus[jour]["Dîner"].push({
+                nom: fruitDin, 
+                quantite: ALIMENTS[fruitDin].quantite
+            });
+        }
+
+        // Réinitialisation partielle tous les 3 jours
+        if ((indexJour + 1) % 3 === 0) {
+            alimentsUtilises.proteines = [];
+            alimentsUtilises.feculents = [];
+            alimentsUtilises.legumes = [];
+        }
+    });
+
+ // ========== CALCUL DES CALORIES ET AJUSTEMENT AVEC PAIN + JUS ==========
+const caloriesMin = 1500;
+const caloriesMax = 1700;
+const margeMin = 250;
+const margeMax = 350;
+const caloriesPainPar30g = 80; // ~80 kcal pour 30g de pain complet
+const caloriesJusPomme = 92;   // 92 kcal pour 200ml de jus de pomme
+const PAIN_MAX_PAR_REPAS = 30; // Limite stricte : 30g max par repas
+
+JOURS.forEach(jour => {
+    // Petit-déjeuner fixe (déjà inclus avec 50g de pain)
+    const caloriesPetitDej = 2 + 133 + 72; // Café + pain 50g + beurre = 207 kcal
+
+    // Déjeuner
+    const caloriesDejeuner = calculerCaloriesRepas(menus[jour]["Déjeuner"]);
+
+    // Dîner
+    const caloriesDiner = calculerCaloriesRepas(menus[jour]["Dîner"]);
+
+    // Total sans marge ni complément
+    let totalSansMarge = caloriesPetitDej + caloriesDejeuner + caloriesDiner;
+
+    // Calcul du déficit calorique
+    let deficit = caloriesMin - totalSansMarge;
+
+    console.log(`📊 ${jour} - Calories: ${totalSansMarge} kcal | Déficit: ${deficit} kcal`);
+
+    // Si déficit > 0, on complète intelligemment
+    if (deficit > 0) {
+        let deficitRestant = deficit;
+
+        // 1️⃣ Ajout de pain au DÉJEUNER (max 30g)
+        if (deficitRestant > 0) {
+            const painDejQuantite = Math.min(PAIN_MAX_PAR_REPAS, Math.ceil(deficitRestant / caloriesPainPar30g) * 30);
+            if (painDejQuantite > 0) {
+                menus[jour]["Déjeuner"].push({
+                    nom: "pain complet",
+                    quantite: painDejQuantite
+                });
+                const caloriesAjoutees = Math.round((painDejQuantite / 30) * caloriesPainPar30g);
+                deficitRestant -= caloriesAjoutees;
+                console.log(`  ➕ Pain déjeuner: ${painDejQuantite}g (${caloriesAjoutees} kcal)`);
+            }
+        }
+
+        // 2️⃣ Ajout de pain au DÎNER (max 30g)
+        if (deficitRestant > 0) {
+            const painDinQuantite = Math.min(PAIN_MAX_PAR_REPAS, Math.ceil(deficitRestant / caloriesPainPar30g) * 30);
+            if (painDinQuantite > 0) {
+                menus[jour]["Dîner"].push({
+                    nom: "pain complet",
+                    quantite: painDinQuantite
+                });
+                const caloriesAjoutees = Math.round((painDinQuantite / 30) * caloriesPainPar30g);
+                deficitRestant -= caloriesAjoutees;
+                console.log(`  ➕ Pain dîner: ${painDinQuantite}g (${caloriesAjoutees} kcal)`);
+            }
+        }
+
+        // 3️⃣ Complément avec JUS DE POMME si déficit restant
+        if (deficitRestant > 0) {
+            // Calcul du nombre de portions de 200ml nécessaires
+            const portionsJus = Math.ceil(deficitRestant / caloriesJusPomme);
+            const quantiteJus = portionsJus * 200;
+
+            // Répartir entre déjeuner et dîner
+            const jusDej = Math.ceil(quantiteJus / 2);
+            const jusDin = quantiteJus - jusDej;
+
+            if (jusDej > 0) {
+                menus[jour]["Déjeuner"].push({
+                    nom: "jus de pomme",
+                    quantite: jusDej
+                });
+                console.log(`  ➕ Jus déjeuner: ${jusDej}ml`);
+            }
+
+            if (jusDin > 0) {
+                menus[jour]["Dîner"].push({
+                    nom: "jus de pomme",
+                    quantite: jusDin
+                });
+                console.log(`  ➕ Jus dîner: ${jusDin}ml`);
+            }
+
+            deficitRestant = 0; // Complètement compensé
+        }
+
+        // Recalculer le total après ajout
+        totalSansMarge = caloriesPetitDej + 
+                       calculerCaloriesRepas(menus[jour]["Déjeuner"]) + 
+                       calculerCaloriesRepas(menus[jour]["Dîner"]);
+    }
+
+    // Marge calculée (250–350 kcal)
+    const marge = Math.max(margeMin, Math.min(margeMax, caloriesMax - totalSansMarge));
+
+    // Ajout de la marge au menu
+    menus[jour]["Marge"] = {
+        description: `Marge pour desserts, boissons ou petits plaisirs : ${marge} kcal.`,
+        calories: marge
+    };
+
+    console.log(`  ✅ Total final: ${totalSansMarge} kcal | Marge: ${marge} kcal`);
+});
+    // 6️⃣ AFFICHAGE ET SAUVEGARDE
+    afficherCalendrier();
+    sauvegarderDansLocalStorage();
+
+    const totalSemaine = calculerTotalSemaine();
+    const moyenne = Math.round(totalSemaine / 7);
+    
+    alert(`✅ Menu "Envies" généré avec succès ! 💖\n\n📊 Total semaine : ${totalSemaine} kcal\n📈 Moyenne/jour : ${moyenne} kcal\n\n💡 Basé sur vos ${envies.length} aliments favoris !\n\nMarge de 250–350 kcal/jour prévue pour desserts et boissons.`);
 }
 	   function suggererRecette(jour, repas) {
             const ingredients = menus[jour][repas].map(item => item.nom);
@@ -2505,6 +2799,62 @@ async function genRecetteIA(jour, repas) {
     console.error('Erreur réseau ou IA :', err);
     contenuEl.innerHTML = '<div class="empty-state">❌ Erreur de connexion au serveur IA.</div>';
   }
+}
+function exporterCalendrier() {
+    // Recharge au cas où
+    rechargerMenus();
+
+    let ics = "BEGIN:VCALENDAR\nVERSION:2.0\nCALSCALE:GREGORIAN\n";
+
+    const mapping = {
+        "Petit déjeuner": "Petit déjeuner",
+        "Déjeuner": "Déjeuner",
+        "Dîner": "Dîner"
+    };
+
+    Object.keys(menus).forEach((jour, index) => {
+        const d = new Date();
+        d.setDate(d.getDate() + index);
+
+        const Y = d.getFullYear();
+        const M = String(d.getMonth() + 1).padStart(2, "0");
+        const D = String(d.getDate()).padStart(2, "0");
+        const dateStr = `${Y}${M}${D}`;
+
+        const dataJour = menus[jour] || {};
+
+        // 🔥 Récupération des repas AVEC LES BONNES CLÉS
+        const petitDej = dataJour["Petit déjeuner"] || [];
+        const dejeuner = dataJour["Déjeuner"] || [];
+        const diner = dataJour["Dîner"] || [];
+
+        // Formatage propre
+        const desc =
+            `Petit déjeuner : ${petitDej.length ? petitDej.map(i => i.nom).join(", ") : "—"}\n` +
+            `Déjeuner : ${dejeuner.length ? dejeuner.map(i => i.nom).join(", ") : "—"}\n` +
+            `Dîner : ${diner.length ? diner.map(i => i.nom).join(", ") : "—"}`;
+
+        ics += `
+BEGIN:VEVENT
+SUMMARY:${jour} – Menu du jour
+DTSTART:${dateStr}T090000
+DTEND:${dateStr}T210000
+DESCRIPTION:${desc.replace(/\n/g, "\\n")}
+END:VEVENT
+`;
+    });
+
+    ics += "END:VCALENDAR";
+
+    const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "menus.ics";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
 }
 </script>
 <!-- Modal Recette IA -->
