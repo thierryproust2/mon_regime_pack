@@ -102,13 +102,26 @@
             min-height: 600px;
         }
 
+
         .sidebar {
             background: #f9fafb;
             padding: 20px;
             border-right: 2px solid #e5e7eb;
+
+            /* Défilement interne de la liste d’aliments */
             overflow-y: auto;
-            max-height: 800px;
+
+            /* Hauteur limitée à la fenêtre, moins le header + toolbar
+               Ajuste 150px si besoin (120–180 selon ton rendu) */
+            max-height: calc(100vh - 150px);
+
+            /* Toujours visible pendant le scroll de la page */
+            position: sticky;
+            top: 150px; /* même valeur que celle soustraite ci-dessus */
         }
+
+
+
 
         .sidebar h3 {
             margin-bottom: 15px;
@@ -1158,7 +1171,10 @@
   "whisky": {emoji: "🥃", calories: 75, quantite: 30, unite: "ml", categorie: "Boissons"},
   "yaourt grec": {emoji: "🥛", calories: 121, quantite: 125, unite: "g", categorie: "Produits laitiers"},
   "yaourt nature": {emoji: "🥛", calories: 76, quantite: 125, unite: "g", categorie: "Produits laitiers"},
-  "yaourt aux fruits": {emoji: "🥛", calories: 113, quantite: 125, unite: "g", categorie: "Produits laitiers"}
+  "yaourt aux fruits": {emoji: "🥛", calories: 113, quantite: 125, unite: "g", categorie: "Produits laitiers"},
+  "biere": {emoji: "🍺", calories: 110, quantite: 250, unite: "ml", categorie: "Boissons"},
+  "vin_blanc": {emoji: "🍷", calories: 88, quantite: 125, unite: "ml", categorie: "Boissons"},
+  "vin_rouge": {emoji: "🍷", calories: 77, quantite: 125, unite: "ml", categorie: "Boissons"},
 };
         // Base de recettes pratiques
         const RECETTES = [
@@ -1821,38 +1837,47 @@ function genererMenuEquilibre() {
         }
     });
 
-  // ========== CALCUL DES CALORIES ET AJUSTEMENT AVEC PAIN + JUS ==========
-const caloriesMin = 1500;
-const caloriesMax = 1700;
+  // ========== CALCUL DES CALORIES ET AJUSTEMENT AVEC PAIN + JUS + VIN ==========
+const caloriesMin = 1200;
+const caloriesMax = 1450;
 const margeMin = 250;
 const margeMax = 350;
-const caloriesPainPar30g = 80; // ~80 kcal pour 30g de pain complet
-const caloriesJusPomme = 92;   // 92 kcal pour 200ml de jus de pomme
-const PAIN_MAX_PAR_REPAS = 30; // Limite stricte : 30g max par repas
+const caloriesPainPar30g = 80;       // 80 kcal pour 30g de pain complet
+const caloriesJusPomme100ml = 46;    // 46 kcal pour 100ml de jus de pomme
+const caloriesVinRouge = 77;         // 77 kcal pour 125ml de vin rouge
+const caloriesVinBlanc = 88;         // 88 kcal pour 125ml de vin blanc
+const PAIN_MAX_PAR_REPAS = 30;       // Limite stricte : 30g max par repas
+const JUS_MAX_PAR_REPAS = 100;       // Limite stricte : 100ml max par repas
 
 JOURS.forEach(jour => {
-    // Petit-déjeuner fixe (déjà inclus avec 50g de pain)
-    const caloriesPetitDej = 2 + 133 + 72; // Café + pain 50g + beurre = 207 kcal
+    // Petit-déjeuner fixe (café + pain 50g + beurre)
+    const caloriesPetitDej = 2 + 124 + 72; // = 198 kcal
 
-    // Déjeuner
+    // ========== AJOUT AUTOMATIQUE DU VIN AU DÉJEUNER ==========
+    menus[jour]["Déjeuner"].push({
+        nom: "vin_rouge",
+        quantite: 125
+    });
+    menus[jour]["Déjeuner"].push({
+        nom: "vin_blanc",
+        quantite: 125
+    });
+
+    // Recalculer après ajout du vin
     const caloriesDejeuner = calculerCaloriesRepas(menus[jour]["Déjeuner"]);
-
-    // Dîner
     const caloriesDiner = calculerCaloriesRepas(menus[jour]["Dîner"]);
 
-    // Total sans marge ni complément
+    // Total actuel
     let totalSansMarge = caloriesPetitDej + caloriesDejeuner + caloriesDiner;
-
-    // Calcul du déficit calorique
     let deficit = caloriesMin - totalSansMarge;
 
     console.log(`📊 ${jour} - Calories: ${totalSansMarge} kcal | Déficit: ${deficit} kcal`);
 
-    // Si déficit > 0, on complète intelligemment
+    // ========== COMPLÉMENT INTELLIGENT SI DÉFICIT ==========
     if (deficit > 0) {
         let deficitRestant = deficit;
 
-        // 1️⃣ Ajout de pain au DÉJEUNER (max 30g)
+        // 1️⃣ Pain au DÉJEUNER (max 30g)
         if (deficitRestant > 0) {
             const painDejQuantite = Math.min(PAIN_MAX_PAR_REPAS, Math.ceil(deficitRestant / caloriesPainPar30g) * 30);
             if (painDejQuantite > 0) {
@@ -1866,7 +1891,7 @@ JOURS.forEach(jour => {
             }
         }
 
-        // 2️⃣ Ajout de pain au DÎNER (max 30g)
+        // 2️⃣ Pain au DÎNER (max 30g)
         if (deficitRestant > 0) {
             const painDinQuantite = Math.min(PAIN_MAX_PAR_REPAS, Math.ceil(deficitRestant / caloriesPainPar30g) * 30);
             if (painDinQuantite > 0) {
@@ -1880,15 +1905,13 @@ JOURS.forEach(jour => {
             }
         }
 
-        // 3️⃣ Complément avec JUS DE POMME si déficit restant
+        // 3️⃣ Jus de pomme (max 100ml/repas)
         if (deficitRestant > 0) {
-            // Calcul du nombre de portions de 200ml nécessaires
-            const portionsJus = Math.ceil(deficitRestant / caloriesJusPomme);
-            const quantiteJus = portionsJus * 200;
+            const portions100ml = Math.ceil(deficitRestant / caloriesJusPomme100ml);
+            const totalJusNecessaire = Math.min(portions100ml * 100, 200); // Max 200ml au total
 
-            // Répartir entre déjeuner et dîner
-            const jusDej = Math.ceil(quantiteJus / 2);
-            const jusDin = quantiteJus - jusDej;
+            const jusDej = Math.min(JUS_MAX_PAR_REPAS, Math.ceil(totalJusNecessaire / 2));
+            const jusDin = Math.min(JUS_MAX_PAR_REPAS, totalJusNecessaire - jusDej);
 
             if (jusDej > 0) {
                 menus[jour]["Déjeuner"].push({
@@ -1906,27 +1929,25 @@ JOURS.forEach(jour => {
                 console.log(`  ➕ Jus dîner: ${jusDin}ml`);
             }
 
-            deficitRestant = 0; // Complètement compensé
+            deficitRestant -= (jusDej + jusDin) * (caloriesJusPomme100ml / 100);
         }
 
-        // Recalculer le total après ajout
+        // Recalculer le total final
         totalSansMarge = caloriesPetitDej + 
                        calculerCaloriesRepas(menus[jour]["Déjeuner"]) + 
                        calculerCaloriesRepas(menus[jour]["Dîner"]);
     }
 
-    // Marge calculée (250–350 kcal)
+    // ========== MARGE POUR DESSERTS/BOISSONS ==========
     const marge = Math.max(margeMin, Math.min(margeMax, caloriesMax - totalSansMarge));
-
-    // Ajout de la marge au menu
     menus[jour]["Marge"] = {
         description: `Marge pour desserts, boissons ou petits plaisirs : ${marge} kcal.`,
         calories: marge
     };
 
+    console.log(`  🍷 Vin ajouté: rouge (${caloriesVinRouge} kcal) + blanc (${caloriesVinBlanc} kcal) = ${caloriesVinRouge + caloriesVinBlanc} kcal`);
     console.log(`  ✅ Total final: ${totalSansMarge} kcal | Marge: ${marge} kcal`);
-});  
-
+});
 // ========== AFFICHAGE ET SAUVEGARDE ==========
 afficherCalendrier();
 sauvegarderDansLocalStorage();
@@ -2098,38 +2119,47 @@ function genererMenuEnvies() {
         }
     });
 
- // ========== CALCUL DES CALORIES ET AJUSTEMENT AVEC PAIN + JUS ==========
-const caloriesMin = 1500;
-const caloriesMax = 1700;
+ // ========== CALCUL DES CALORIES ET AJUSTEMENT AVEC PAIN + JUS + VIN ==========
+const caloriesMin = 1200;
+const caloriesMax = 1450;
 const margeMin = 250;
 const margeMax = 350;
-const caloriesPainPar30g = 80; // ~80 kcal pour 30g de pain complet
-const caloriesJusPomme = 92;   // 92 kcal pour 200ml de jus de pomme
-const PAIN_MAX_PAR_REPAS = 30; // Limite stricte : 30g max par repas
+const caloriesPainPar30g = 80;       // 80 kcal pour 30g de pain complet
+const caloriesJusPomme100ml = 46;    // 46 kcal pour 100ml de jus de pomme
+const caloriesVinRouge = 77;         // 77 kcal pour 125ml de vin rouge
+const caloriesVinBlanc = 88;         // 88 kcal pour 125ml de vin blanc
+const PAIN_MAX_PAR_REPAS = 30;       // Limite stricte : 30g max par repas
+const JUS_MAX_PAR_REPAS = 100;       // Limite stricte : 100ml max par repas
 
 JOURS.forEach(jour => {
-    // Petit-déjeuner fixe (déjà inclus avec 50g de pain)
-    const caloriesPetitDej = 2 + 133 + 72; // Café + pain 50g + beurre = 207 kcal
+    // Petit-déjeuner fixe (café + pain 50g + beurre)
+    const caloriesPetitDej = 2 + 124 + 72; // = 198 kcal
 
-    // Déjeuner
+    // ========== AJOUT AUTOMATIQUE DU VIN AU DÉJEUNER ==========
+    menus[jour]["Déjeuner"].push({
+        nom: "vin_rouge",
+        quantite: 125
+    });
+    menus[jour]["Déjeuner"].push({
+        nom: "vin_blanc",
+        quantite: 125
+    });
+
+    // Recalculer après ajout du vin
     const caloriesDejeuner = calculerCaloriesRepas(menus[jour]["Déjeuner"]);
-
-    // Dîner
     const caloriesDiner = calculerCaloriesRepas(menus[jour]["Dîner"]);
 
-    // Total sans marge ni complément
+    // Total actuel
     let totalSansMarge = caloriesPetitDej + caloriesDejeuner + caloriesDiner;
-
-    // Calcul du déficit calorique
     let deficit = caloriesMin - totalSansMarge;
 
     console.log(`📊 ${jour} - Calories: ${totalSansMarge} kcal | Déficit: ${deficit} kcal`);
 
-    // Si déficit > 0, on complète intelligemment
+    // ========== COMPLÉMENT INTELLIGENT SI DÉFICIT ==========
     if (deficit > 0) {
         let deficitRestant = deficit;
 
-        // 1️⃣ Ajout de pain au DÉJEUNER (max 30g)
+        // 1️⃣ Pain au DÉJEUNER (max 30g)
         if (deficitRestant > 0) {
             const painDejQuantite = Math.min(PAIN_MAX_PAR_REPAS, Math.ceil(deficitRestant / caloriesPainPar30g) * 30);
             if (painDejQuantite > 0) {
@@ -2143,7 +2173,7 @@ JOURS.forEach(jour => {
             }
         }
 
-        // 2️⃣ Ajout de pain au DÎNER (max 30g)
+        // 2️⃣ Pain au DÎNER (max 30g)
         if (deficitRestant > 0) {
             const painDinQuantite = Math.min(PAIN_MAX_PAR_REPAS, Math.ceil(deficitRestant / caloriesPainPar30g) * 30);
             if (painDinQuantite > 0) {
@@ -2157,15 +2187,13 @@ JOURS.forEach(jour => {
             }
         }
 
-        // 3️⃣ Complément avec JUS DE POMME si déficit restant
+        // 3️⃣ Jus de pomme (max 100ml/repas)
         if (deficitRestant > 0) {
-            // Calcul du nombre de portions de 200ml nécessaires
-            const portionsJus = Math.ceil(deficitRestant / caloriesJusPomme);
-            const quantiteJus = portionsJus * 200;
+            const portions100ml = Math.ceil(deficitRestant / caloriesJusPomme100ml);
+            const totalJusNecessaire = Math.min(portions100ml * 100, 200); // Max 200ml au total
 
-            // Répartir entre déjeuner et dîner
-            const jusDej = Math.ceil(quantiteJus / 2);
-            const jusDin = quantiteJus - jusDej;
+            const jusDej = Math.min(JUS_MAX_PAR_REPAS, Math.ceil(totalJusNecessaire / 2));
+            const jusDin = Math.min(JUS_MAX_PAR_REPAS, totalJusNecessaire - jusDej);
 
             if (jusDej > 0) {
                 menus[jour]["Déjeuner"].push({
@@ -2183,24 +2211,23 @@ JOURS.forEach(jour => {
                 console.log(`  ➕ Jus dîner: ${jusDin}ml`);
             }
 
-            deficitRestant = 0; // Complètement compensé
+            deficitRestant -= (jusDej + jusDin) * (caloriesJusPomme100ml / 100);
         }
 
-        // Recalculer le total après ajout
+        // Recalculer le total final
         totalSansMarge = caloriesPetitDej + 
                        calculerCaloriesRepas(menus[jour]["Déjeuner"]) + 
                        calculerCaloriesRepas(menus[jour]["Dîner"]);
     }
 
-    // Marge calculée (250–350 kcal)
+    // ========== MARGE POUR DESSERTS/BOISSONS ==========
     const marge = Math.max(margeMin, Math.min(margeMax, caloriesMax - totalSansMarge));
-
-    // Ajout de la marge au menu
     menus[jour]["Marge"] = {
         description: `Marge pour desserts, boissons ou petits plaisirs : ${marge} kcal.`,
         calories: marge
     };
 
+    console.log(`  🍷 Vin ajouté: rouge (${caloriesVinRouge} kcal) + blanc (${caloriesVinBlanc} kcal) = ${caloriesVinRouge + caloriesVinBlanc} kcal`);
     console.log(`  ✅ Total final: ${totalSansMarge} kcal | Marge: ${marge} kcal`);
 });
     // 6️⃣ AFFICHAGE ET SAUVEGARDE
