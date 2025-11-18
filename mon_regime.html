@@ -716,27 +716,23 @@
         </div>
 
         <div class="toolbar">
-            <button class="btn btn-purple" onclick="ouvrirStock()">🏠 Mon Stock</button>
-            <button class="btn btn-purple" onclick="ouvrirEnvies()">💭 Mes Envies</button>
-            <div style="
-    background-color: #e6f7ff;
-    padding: 12px;
-    border-radius: 8px;
-    margin-bottom: 15px;
-    border: 1px solid #b3e0ff;
-">
-    <p style="margin: 0; font-size: 14px;">
-        ⚠️ <strong>Flexibilité alimentaire :</strong>
-        Chaque jour, une marge de <strong>250–350 kcal</strong> est réservée pour vos desserts, boissons, fruits supplémentaires ou petits plaisirs.
-        Ces calories <strong>ne sont pas incluses</strong> dans les repas principaux.
-    </p>
+    <button class="btn btn-purple" onclick="ouvrirStock()">🏠 Mon Stock</button>
+    <button class="btn btn-purple" onclick="ouvrirEnvies()">💭 Mes Envies</button>
+    <div style="background-color: #e6f7ff; padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #b3e0ff;">
+        <p style="margin: 0; font-size: 14px;">
+            ⚠️ <strong>Flexibilité alimentaire :</strong>
+            Chaque jour, une marge de <strong>250–350 kcal</strong> est réservée pour vos desserts, boissons, fruits supplémentaires ou petits plaisirs.
+            Ces calories <strong>ne sont pas incluses</strong> dans les repas principaux.
+        </p>
+    </div>
+    <button class="btn btn-primary" onclick="genererMenuEquilibre()">🎲 Menu Équilibré</button>
+    <!-- Ajoute cette ligne -->
+    <button class="btn btn-secondary" onclick="genererMenuEnvies()">💖 Menus Envies</button>
+    <button class="btn btn-secondary" onclick="afficherListeCourses()">🛒 Liste de Courses</button>
+    <button class="btn btn-warning" onclick="afficherStatistiques()">📊 Statistiques</button>
+    <button class="btn btn-purple" onclick="ouvrirRecettes()">👨‍🍳 Idées Recettes</button>
+    <button class="btn btn-danger" onclick="reinitialiserMenus()">🧹 Réinitialiser</button>
 </div>
-			<button class="btn btn-primary" onclick="genererMenuEquilibre()">🎲 Menu Équilibré</button>
-            <button class="btn btn-secondary" onclick="afficherListeCourses()">🛒 Liste de Courses</button>
-            <button class="btn btn-warning" onclick="afficherStatistiques()">📊 Statistiques</button>
-            <button class="btn btn-purple" onclick="ouvrirRecettes()">👨‍🍳 Idées Recettes</button>
-            <button class="btn btn-danger" onclick="reinitialiserMenus()">🧹 Réinitialiser</button>
-        </div>
 
         <div class="main-content">
             <div class="sidebar">
@@ -1703,7 +1699,6 @@ function genererMenuEquilibre() {
     if (!confirm('⚠️ Cela va remplacer tous vos menus actuels. Continuer ?')) {
         return;
     }
-
     console.log("🎲 Génération d'un menu équilibré pour la semaine...");
 
     // 1️⃣ PRÉPARATION DES CATÉGORIES D'ALIMENTS
@@ -1891,7 +1886,38 @@ sauvegarderDansLocalStorage();
 const totalSemaine = calculerTotalSemaine();
 const moyenne = Math.round(totalSemaine / 7);
 alert(`✅ Menu équilibré généré avec succès !\n\n📊 Total semaine : ${totalSemaine} kcal\n📈 Moyenne/jour : ${moyenne} kcal\n\n💡 Une marge de 250–350 kcal/jour est prévue pour vos desserts et boissons.`);
-      } 
+      }
+	  function afficherMenu(menu, type) {
+    // Sauvegarder le menu généré dans localStorage
+    const monRegimeData = JSON.parse(localStorage.getItem('monRegimeData')) || {};
+    monRegimeData[type] = menu;
+    localStorage.setItem('monRegimeData', JSON.stringify(monRegimeData));
+
+    // Recharger la page pour afficher le menu
+    window.location.reload();
+}
+	  // Fonction pour générer un menu basé sur les envies
+function genererMenuEnvies() {
+    // 1. Récupérer les données depuis localStorage
+    const monRegimeData = JSON.parse(localStorage.getItem('monRegimeData')) || {};
+    const listeEnvies = monRegimeData.envies || [];
+
+    // 2. Vérifier si la liste des envies est vide
+    if (listeEnvies.length === 0) {
+        alert("Votre liste d'envies est vide. Ajoutez des aliments avant de générer un menu.");
+        return;
+    }
+
+    // 3. Générer un menu aléatoire pour 7 jours
+    const menuSemaine = [];
+    for (let jour = 0; jour < 7; jour++) {
+        const platAleatoire = listeEnvies[Math.floor(Math.random() * listeEnvies.length)];
+        menuSemaine.push(platAleatoire);
+    }
+
+    // 4. Afficher le menu généré
+    afficherMenu(menuSemaine, 'menu-envies');
+}
 	   function suggererRecette(jour, repas) {
             const ingredients = menus[jour][repas].map(item => item.nom);
             const recettesTrouvees = RECETTES.filter(recette => {
