@@ -1699,545 +1699,484 @@
 
         // ========================================
 // ========================================
-// FONCTION MENU ÉQUILIBRÉ - VERSION CORRIGÉE
+// GÉNÉRATION DE MENUS ÉQUILIBRÉS AMÉLIORÉE
 // ========================================
-// Fonction pour calculer les calories d'un repas
-function calculerCaloriesRepas(repas) {
-    return repas.reduce((total, aliment) => {
-        const infoAliment = ALIMENTS[aliment.nom];
-        if (!infoAliment) return total;
-        // Calorie = (calorie pour 100g * quantite) / 100
-        const calories = (infoAliment.calories * aliment.quantite) / 100;
-        return total + Math.round(calories);
-    }, 0);
+
+// Objectif calorique journalier : 1750 kcal (2000 - 250 de marge)
+const OBJECTIF_CAL = {
+    TOTAL_JOUR: 1750,
+    PETIT_DEJ: 400,    // 23%
+    DEJEUNER: 700,     // 40%
+    DINER: 650,        // 37%
+    MARGE: 250         // Pour desserts/plaisirs
+};
+
+// Répartition nutritionnelle idéale par repas
+const REPARTITION = {
+    PETIT_DEJ: {
+        feculents: 0.60,   // 60% féculents
+        proteines: 0.15,   // 15% protéines
+        matieres_grasses: 0.15, // 15% matières grasses
+        fruits: 0.10       // 10% fruits
+    },
+    DEJEUNER: {
+        proteines: 0.35,   // 35% protéines
+        feculents: 0.30,   // 30% féculents
+        legumes: 0.25,     // 25% légumes
+        fruits: 0.10       // 10% fruits
+    },
+    DINER: {
+        proteines: 0.30,   // 30% protéines (moins que midi)
+        legumes: 0.50,     // 50% légumes (plus que midi)
+        feculents: 0.15,   // 15% féculents (réduit le soir)
+        fruits: 0.05       // 5% fruits
+    }
+};
+
+// Catégorisation avancée des aliments
+function categoriserAliments() {
+    const categories = {
+        proteines_maigres: [],
+        proteines_grasses: [],
+        feculents_complets: [],
+        feculents_raffines: [],
+        legumes_verts: [],
+        legumes_colores: [],
+        legumes_feculents: [],
+        fruits_frais: [],
+        fruits_secs: [],
+        produits_laitiers: [],
+        matieres_grasses: [],
+        aromates: []
+    };
+
+    Object.entries(ALIMENTS).forEach(([nom, data]) => {
+        const cat = data.categorie;
+        const cal = data.calories;
+
+        // Protéines
+        if (['Viandes', 'Poissons', 'Œufs', 'Protéines végétales'].includes(cat)) {
+            if (cal < 150 || cat === 'Poissons' || nom.includes('blanc') || nom === 'tofu') {
+                categories.proteines_maigres.push(nom);
+            } else {
+                categories.proteines_grasses.push(nom);
+            }
+        }
+        
+        // Féculents
+        if (cat === 'Féculents / Céréales') {
+            if (nom.includes('complet') || nom.includes('quinoa') || nom.includes('lentilles')) {
+                categories.feculents_complets.push(nom);
+            } else {
+                categories.feculents_raffines.push(nom);
+            }
+        }
+
+        // Légumes
+        if (cat === 'Légumes') {
+            if (cal > 100) {
+                categories.legumes_feculents.push(nom);
+            } else if (data.emoji.includes('🥬') || nom.includes('épinards') || nom.includes('brocoli')) {
+                categories.legumes_verts.push(nom);
+            } else {
+                categories.legumes_colores.push(nom);
+            }
+        }
+
+        // Fruits
+        if (cat === 'Fruits') {
+            if (nom.includes('sec')) {
+                categories.fruits_secs.push(nom);
+            } else {
+                categories.fruits_frais.push(nom);
+            }
+        }
+
+        // Produits laitiers
+        if (cat === 'Produits laitiers') {
+            categories.produits_laitiers.push(nom);
+        }
+
+        // Matières grasses
+        if (cat === 'Matières grasses') {
+            categories.matieres_grasses.push(nom);
+        }
+
+        // Aromates
+        if (cat === 'Aromates / Épices') {
+            categories.aromates.push(nom);
+        }
+    });
+
+    return categories;
 }
+
+// Sélection intelligente d'aliment avec rotation et priorités
+function selectionnerAliment(liste, dejaPris, prioritaires = []) {
+    if (!liste || liste.length === 0) return null;
+    
+    // Filtrer les déjà utilisés
+    let disponibles = liste.filter(a => !dejaPris.includes(a));
+    if (disponibles.length === 0) disponibles = [...liste];
+    
+    // Priorité 1 : Stock et envies
+    const prioritairesDisponibles = disponibles.filter(a => prioritaires.includes(a));
+    if (prioritairesDisponibles.length > 0) {
+        return prioritairesDisponibles[Math.floor(Math.random() * prioritairesDisponibles.length)];
+    }
+    
+    // Sinon : aléatoire
+    return disponibles[Math.floor(Math.random() * disponibles.length)];
+}
+
+// Calculer les calories d'un aliment selon sa quantité
+function calculerCalories(nom, quantite) {
+    const aliment = ALIMENTS[nom];
+    if (!aliment) return 0;
+    return Math.round((aliment.calories * quantite) / aliment.quantite);
+}
+
+// Ajuster la quantité pour atteindre un objectif calorique
+function ajusterQuantite(nom, caloriesVisees) {
+    const aliment = ALIMENTS[nom];
+    if (!aliment) return aliment.quantite;
+    
+    const ratio = caloriesVisees / aliment.calories;
+    const quantiteAjustee = Math.round(aliment.quantite * ratio);
+    
+    // Limiter à des quantités réalistes (min 20g/20ml, max 300g/300ml)
+    return Math.max(20, Math.min(300, quantiteAjustee));
+}
+
+// ========================================
+// FONCTION PRINCIPALE : MENU ÉQUILIBRÉ
+// ========================================
 function genererMenuEquilibre() {
-    // Demande confirmation avant de remplacer les menus existants
     if (!confirm('⚠️ Cela va remplacer tous vos menus actuels. Continuer ?')) {
         return;
     }
-    console.log("🎲 Génération d'un menu équilibré pour la semaine...");
 
-    // 1️⃣ PRÉPARATION DES CATÉGORIES D'ALIMENTS
-    const alimentsDispos = Object.keys(ALIMENTS);
-    
-    // Aliments prioritaires (stock + envies)
-    const alimentsPrioritaires = [
-        ...Object.keys(stock),
-        ...envies.filter(e => !stock[e])
-    ];
+    console.log("🎲 Génération d'un menu équilibré nutritionnellement...");
 
-    // Catégories pour un repas équilibré
-    const proteines = alimentsDispos.filter(nom => 
-        ['Viandes', 'Poissons', 'Œufs', 'Protéines végétales'].includes(ALIMENTS[nom].categorie)
-    );
-    
-    const feculents = alimentsDispos.filter(nom => 
-        ['Féculents / Céréales'].includes(ALIMENTS[nom].categorie)
-    );
-    
-    const legumes = alimentsDispos.filter(nom => 
-        ALIMENTS[nom].categorie === 'Légumes'
-    );
-    
-    const fruits = alimentsDispos.filter(nom => 
-        ALIMENTS[nom].categorie === 'Fruits'
-    );
-
-    // 2️⃣ FONCTION DE SÉLECTION INTELLIGENTE
-    function choisirAliment(liste, dejaPris = []) {
-        if (!liste || liste.length === 0) return null;
-        
-        // Filtre les aliments déjà utilisés
-        let listeFiltree = liste.filter(a => !dejaPris.includes(a));
-        if (listeFiltree.length === 0) listeFiltree = liste;
-        
-        // Priorité au stock et aux envies
-        const prioritaires = listeFiltree.filter(a => alimentsPrioritaires.includes(a));
-        if (prioritaires.length > 0) {
-            return prioritaires[Math.floor(Math.random() * prioritaires.length)];
-        }
-        
-        // Sinon, choix aléatoire
-        return listeFiltree[Math.floor(Math.random() * listeFiltree.length)];
-    }
-
-    // 3️⃣ GÉNÉRATION DES MENUS
-    const alimentsUtilises = {
-        proteines: [],
-        feculents: [],
-        legumes: []
-    };
-
-    JOURS.forEach((jour, indexJour) => {
-        console.log(`📅 Génération du menu pour ${jour}...`);
-
-        // ========== PETIT DÉJEUNER FIXE ==========
-        menus[jour]["Petit déjeuner"] = [
-            {nom: "café", quantite: 200},
-            {nom: "pain complet", quantite: 50},
-            {nom: "beurre", quantite: 10}
-        ];
-
-        // ========== DÉJEUNER (REPAS PRINCIPAL) ==========
-        const proteineDej = choisirAliment(proteines, alimentsUtilises.proteines);
-        const feculentDej = choisirAliment(feculents, alimentsUtilises.feculents);
-        const legumeDej = choisirAliment(legumes, alimentsUtilises.legumes);
-        const fruitDej = Math.random() > 0.3 ? choisirAliment(fruits) : null;
-
-        alimentsUtilises.proteines.push(proteineDej);
-        alimentsUtilises.feculents.push(feculentDej);
-        alimentsUtilises.legumes.push(legumeDej);
-
-        menus[jour]["Déjeuner"] = [
-            {nom: proteineDej, quantite: ALIMENTS[proteineDej].quantite},
-            {nom: feculentDej, quantite: ALIMENTS[feculentDej].quantite},
-            {nom: legumeDej, quantite: ALIMENTS[legumeDej].quantite}
-        ];
-
-        if (fruitDej) {
-            menus[jour]["Déjeuner"].push({
-                nom: fruitDej,
-                quantite: ALIMENTS[fruitDej].quantite
-            });
-        }
-
-        // ========== DÎNER (PLUS LÉGER) ==========
-        const proteineDin = choisirAliment(proteines, alimentsUtilises.proteines);
-        const legumeDin1 = choisirAliment(legumes, alimentsUtilises.legumes);
-        const legumeDin2 = Math.random() > 0.5 ? choisirAliment(legumes, [...alimentsUtilises.legumes, legumeDin1]) : null;
-        const fruitDin = choisirAliment(fruits);
-
-        alimentsUtilises.proteines.push(proteineDin);
-        alimentsUtilises.legumes.push(legumeDin1);
-        if (legumeDin2) alimentsUtilises.legumes.push(legumeDin2);
-
-        menus[jour]["Dîner"] = [
-            {nom: proteineDin, quantite: Math.round(ALIMENTS[proteineDin].quantite * 0.8)}, // Portion réduite le soir
-            {nom: legumeDin1, quantite: ALIMENTS[legumeDin1].quantite}
-        ];
-
-        if (legumeDin2) {
-            menus[jour]["Dîner"].push({
-                nom: legumeDin2,
-                quantite: ALIMENTS[legumeDin2].quantite
-            });
-        }
-
-        menus[jour]["Dîner"].push({
-            nom: fruitDin,
-            quantite: ALIMENTS[fruitDin].quantite
-        });
-
-        // Réinitialisation partielle pour varier (tous les 3 jours)
-        if ((indexJour + 1) % 3 === 0) {
-            alimentsUtilises.proteines = [];
-            alimentsUtilises.feculents = [];
-            alimentsUtilises.legumes = [];
-        }
-    });
-
-  // ========== CALCUL DES CALORIES ET AJUSTEMENT AVEC PAIN + JUS + VIN ==========
-const caloriesMin = 1200;
-const caloriesMax = 1450;
-const margeMin = 250;
-const margeMax = 350;
-const caloriesPainPar30g = 80;       // 80 kcal pour 30g de pain complet
-const caloriesJusPomme100ml = 46;    // 46 kcal pour 100ml de jus de pomme
-const caloriesVinRouge = 77;         // 77 kcal pour 125ml de vin rouge
-const caloriesVinBlanc = 88;         // 88 kcal pour 125ml de vin blanc
-const PAIN_MAX_PAR_REPAS = 30;       // Limite stricte : 30g max par repas
-const JUS_MAX_PAR_REPAS = 100;       // Limite stricte : 100ml max par repas
-
-JOURS.forEach(jour => {
-    // Petit-déjeuner fixe (café + pain 50g + beurre)
-    const caloriesPetitDej = 2 + 124 + 72; // = 198 kcal
-
-    // ========== AJOUT AUTOMATIQUE DU VIN AU DÉJEUNER ==========
-    menus[jour]["Déjeuner"].push({
-        nom: "vin_rouge",
-        quantite: 125
-    });
-    menus[jour]["Déjeuner"].push({
-        nom: "vin_blanc",
-        quantite: 125
-    });
-
-    // Recalculer après ajout du vin
-    const caloriesDejeuner = calculerCaloriesRepas(menus[jour]["Déjeuner"]);
-    const caloriesDiner = calculerCaloriesRepas(menus[jour]["Dîner"]);
-
-    // Total actuel
-    let totalSansMarge = caloriesPetitDej + caloriesDejeuner + caloriesDiner;
-    let deficit = caloriesMin - totalSansMarge;
-
-    console.log(`📊 ${jour} - Calories: ${totalSansMarge} kcal | Déficit: ${deficit} kcal`);
-
-    // ========== COMPLÉMENT INTELLIGENT SI DÉFICIT ==========
-    if (deficit > 0) {
-        let deficitRestant = deficit;
-
-        // 1️⃣ Pain au DÉJEUNER (max 30g)
-        if (deficitRestant > 0) {
-            const painDejQuantite = Math.min(PAIN_MAX_PAR_REPAS, Math.ceil(deficitRestant / caloriesPainPar30g) * 30);
-            if (painDejQuantite > 0) {
-                menus[jour]["Déjeuner"].push({
-                    nom: "pain complet",
-                    quantite: painDejQuantite
-                });
-                const caloriesAjoutees = Math.round((painDejQuantite / 30) * caloriesPainPar30g);
-                deficitRestant -= caloriesAjoutees;
-                console.log(`  ➕ Pain déjeuner: ${painDejQuantite}g (${caloriesAjoutees} kcal)`);
-            }
-        }
-
-        // 2️⃣ Pain au DÎNER (max 30g)
-        if (deficitRestant > 0) {
-            const painDinQuantite = Math.min(PAIN_MAX_PAR_REPAS, Math.ceil(deficitRestant / caloriesPainPar30g) * 30);
-            if (painDinQuantite > 0) {
-                menus[jour]["Dîner"].push({
-                    nom: "pain complet",
-                    quantite: painDinQuantite
-                });
-                const caloriesAjoutees = Math.round((painDinQuantite / 30) * caloriesPainPar30g);
-                deficitRestant -= caloriesAjoutees;
-                console.log(`  ➕ Pain dîner: ${painDinQuantite}g (${caloriesAjoutees} kcal)`);
-            }
-        }
-
-        // 3️⃣ Jus de pomme (max 100ml/repas)
-        if (deficitRestant > 0) {
-            const portions100ml = Math.ceil(deficitRestant / caloriesJusPomme100ml);
-            const totalJusNecessaire = Math.min(portions100ml * 100, 200); // Max 200ml au total
-
-            const jusDej = Math.min(JUS_MAX_PAR_REPAS, Math.ceil(totalJusNecessaire / 2));
-            const jusDin = Math.min(JUS_MAX_PAR_REPAS, totalJusNecessaire - jusDej);
-
-            if (jusDej > 0) {
-                menus[jour]["Déjeuner"].push({
-                    nom: "jus de pomme",
-                    quantite: jusDej
-                });
-                console.log(`  ➕ Jus déjeuner: ${jusDej}ml`);
-            }
-
-            if (jusDin > 0) {
-                menus[jour]["Dîner"].push({
-                    nom: "jus de pomme",
-                    quantite: jusDin
-                });
-                console.log(`  ➕ Jus dîner: ${jusDin}ml`);
-            }
-
-            deficitRestant -= (jusDej + jusDin) * (caloriesJusPomme100ml / 100);
-        }
-
-        // Recalculer le total final
-        totalSansMarge = caloriesPetitDej + 
-                       calculerCaloriesRepas(menus[jour]["Déjeuner"]) + 
-                       calculerCaloriesRepas(menus[jour]["Dîner"]);
-    }
-
-    // ========== MARGE POUR DESSERTS/BOISSONS ==========
-    const marge = Math.max(margeMin, Math.min(margeMax, caloriesMax - totalSansMarge));
-    menus[jour]["Marge"] = {
-        description: `Marge pour desserts, boissons ou petits plaisirs : ${marge} kcal.`,
-        calories: marge
-    };
-
-    console.log(`  🍷 Vin ajouté: rouge (${caloriesVinRouge} kcal) + blanc (${caloriesVinBlanc} kcal) = ${caloriesVinRouge + caloriesVinBlanc} kcal`);
-    console.log(`  ✅ Total final: ${totalSansMarge} kcal | Marge: ${marge} kcal`);
-});
-// ========== AFFICHAGE ET SAUVEGARDE ==========
-afficherCalendrier();
-sauvegarderDansLocalStorage();
-
-// ========== MESSAGE DE CONFIRMATION ==========
-const totalSemaine = calculerTotalSemaine();
-const moyenne = Math.round(totalSemaine / 7);
-alert(`✅ Menu équilibré généré avec succès !\n\n📊 Total semaine : ${totalSemaine} kcal\n📈 Moyenne/jour : ${moyenne} kcal\n\n💡 Une marge de 250–350 kcal/jour est prévue pour vos desserts et boissons.`);
-      }
-	 // ========================================
-// FONCTION MENU ENVIES - VERSION CORRIGÉE
-// ========================================
-
-function genererMenuEnvies() {
-    // Vérifier qu'il y a des envies
-    if (!envies || envies.length === 0) {
-        alert("⚠️ Votre liste d'envies est vide !\n\nAjoutez des aliments dans 'Mes Envies' avant de générer un menu.");
-        return;
-    }
-
-    // Confirmation avant de remplacer
-    if (!confirm('⚠️ Cela va remplacer tous vos menus actuels par des menus basés sur vos envies. Continuer ?')) {
-        return;
-    }
-
-    console.log("💖 Génération d'un menu basé sur vos envies...");
-    console.log("📋 Envies disponibles :", envies);
-
-    // 1️⃣ CATÉGORISER LES ENVIES
-    const enviesParCategorie = {
-        proteines: [],
-        feculents: [],
-        legumes: [],
-        fruits: [],
-        autres: []
-    };
-
-    envies.forEach(nom => {
-        const aliment = ALIMENTS[nom];
-        if (!aliment) return;
-
-        const cat = aliment.categorie;
-        if (['Viandes', 'Poissons', 'Œufs', 'Protéines végétales'].includes(cat)) {
-            enviesParCategorie.proteines.push(nom);
-        } else if (cat === 'Féculents / Céréales') {
-            enviesParCategorie.feculents.push(nom);
-        } else if (cat === 'Légumes') {
-            enviesParCategorie.legumes.push(nom);
-        } else if (cat === 'Fruits') {
-            enviesParCategorie.fruits.push(nom);
-        } else {
-            enviesParCategorie.autres.push(nom);
-        }
-    });
-
-    console.log("📊 Catégorisation des envies :", enviesParCategorie);
-
-    // 2️⃣ VÉRIFICATIONS
-    if (enviesParCategorie.proteines.length === 0) {
-        alert("⚠️ Ajoutez au moins une protéine (viande, poisson, œuf) dans vos envies pour générer un menu équilibré.");
-        return;
-    }
-
-    // 3️⃣ FONCTION POUR CHOISIR UN ALIMENT AVEC ROTATION
-    const alimentsUtilises = {
+    const cats = categoriserAliments();
+    const alimentsPrioritaires = [...Object.keys(stock), ...envies];
+    const historique = {
         proteines: [],
         feculents: [],
         legumes: [],
         fruits: []
     };
 
-    function choisirDansEnvies(categorie) {
-        const liste = enviesParCategorie[categorie];
-        if (!liste || liste.length === 0) return null;
+    JOURS.forEach((jour, index) => {
+        console.log(`\n📅 ${jour}`);
 
-        // Filtrer ceux déjà utilisés
-        let disponibles = liste.filter(a => !alimentsUtilises[categorie].includes(a));
+        // ========== PETIT DÉJEUNER (400 kcal) ==========
+        const petitDej = [];
         
-        // Si tous ont été utilisés, on réinitialise
-        if (disponibles.length === 0) {
-            alimentsUtilises[categorie] = [];
-            disponibles = [...liste];
+        // Féculent (240 kcal - 60%)
+        const feculent1 = selectionnerAliment(
+            [...cats.feculents_complets, 'pain complet', 'pain de seigle', 'flocons d\'avoine'],
+            historique.feculents,
+            alimentsPrioritaires
+        );
+        petitDej.push({ nom: feculent1, quantite: ajusterQuantite(feculent1, 240) });
+        historique.feculents.push(feculent1);
+
+        // Protéine (60 kcal - 15%)
+        const proteinePD = selectionnerAliment(
+            [...cats.produits_laitiers, 'œuf'],
+            [],
+            alimentsPrioritaires
+        );
+        petitDej.push({ nom: proteinePD, quantite: ajusterQuantite(proteinePD, 60) });
+
+        // Matière grasse (60 kcal - 15%)
+        const matiereGrasse = selectionnerAliment(
+            ['beurre', 'beurre de cacahuète', 'huile d\'olive'],
+            [],
+            alimentsPrioritaires
+        );
+        petitDej.push({ nom: matiereGrasse, quantite: ajusterQuantite(matiereGrasse, 60) });
+
+        // Fruit (40 kcal - 10%)
+        const fruitPD = selectionnerAliment(cats.fruits_frais, historique.fruits, alimentsPrioritaires);
+        if (fruitPD) {
+            petitDej.push({ nom: fruitPD, quantite: ajusterQuantite(fruitPD, 40) });
+            historique.fruits.push(fruitPD);
         }
 
-        // Choix aléatoire
-        const choix = disponibles[Math.floor(Math.random() * disponibles.length)];
-        alimentsUtilises[categorie].push(choix);
-        return choix;
-    }
+        // Boisson
+        petitDej.push({ nom: 'café', quantite: 200 });
 
-    // 4️⃣ GÉNÉRATION DES MENUS
-    JOURS.forEach((jour, indexJour) => {
-        console.log(`📅 Génération du menu pour ${jour}...`);
+        menus[jour]["Petit déjeuner"] = petitDej;
 
-        // ========== PETIT DÉJEUNER FIXE ==========
-        menus[jour]["Petit déjeuner"] = [
-            {nom: "café", quantite: 200},
-            {nom: "pain complet", quantite: 50},
-            {nom: "beurre", quantite: 10}
-        ];
+        // ========== DÉJEUNER (700 kcal) ==========
+        const dejeuner = [];
 
-        // ========== DÉJEUNER ==========
-        const proteineDej = choisirDansEnvies('proteines');
-        const feculentDej = choisirDansEnvies('feculents');
-        const legumeDej = choisirDansEnvies('legumes');
-        const fruitDej = choisirDansEnvies('fruits');
+        // Protéine (245 kcal - 35%)
+        const proteineDej = selectionnerAliment(
+            [...cats.proteines_maigres, ...cats.proteines_grasses],
+            historique.proteines,
+            alimentsPrioritaires
+        );
+        dejeuner.push({ nom: proteineDej, quantite: ajusterQuantite(proteineDej, 245) });
+        historique.proteines.push(proteineDej);
 
-        menus[jour]["Déjeuner"] = [
-            {nom: proteineDej, quantite: ALIMENTS[proteineDej].quantite}
-        ];
+        // Féculent (210 kcal - 30%)
+        const feculentDej = selectionnerAliment(
+            [...cats.feculents_complets, ...cats.feculents_raffines],
+            historique.feculents,
+            alimentsPrioritaires
+        );
+        dejeuner.push({ nom: feculentDej, quantite: ajusterQuantite(feculentDej, 210) });
+        historique.feculents.push(feculentDej);
 
-        if (feculentDej) {
-            menus[jour]["Déjeuner"].push({
-                nom: feculentDej, 
-                quantite: ALIMENTS[feculentDej].quantite
-            });
-        }
+        // Légumes (175 kcal - 25%)
+        const legume1Dej = selectionnerAliment(
+            [...cats.legumes_verts, ...cats.legumes_colores],
+            historique.legumes,
+            alimentsPrioritaires
+        );
+        const legume2Dej = selectionnerAliment(
+            [...cats.legumes_verts, ...cats.legumes_colores],
+            [...historique.legumes, legume1Dej],
+            alimentsPrioritaires
+        );
+        dejeuner.push({ nom: legume1Dej, quantite: ajusterQuantite(legume1Dej, 90) });
+        dejeuner.push({ nom: legume2Dej, quantite: ajusterQuantite(legume2Dej, 85) });
+        historique.legumes.push(legume1Dej, legume2Dej);
 
-        if (legumeDej) {
-            menus[jour]["Déjeuner"].push({
-                nom: legumeDej, 
-                quantite: ALIMENTS[legumeDej].quantite
-            });
-        }
-
+        // Fruit (70 kcal - 10%)
+        const fruitDej = selectionnerAliment(cats.fruits_frais, historique.fruits, alimentsPrioritaires);
         if (fruitDej) {
-            menus[jour]["Déjeuner"].push({
-                nom: fruitDej, 
-                quantite: ALIMENTS[fruitDej].quantite
-            });
+            dejeuner.push({ nom: fruitDej, quantite: ajusterQuantite(fruitDej, 70) });
+            historique.fruits.push(fruitDej);
         }
 
-        // ========== DÎNER ==========
-        const proteineDin = choisirDansEnvies('proteines');
-        const legumeDin1 = choisirDansEnvies('legumes');
-        const legumeDin2 = choisirDansEnvies('legumes');
-        const fruitDin = choisirDansEnvies('fruits');
+        // Matière grasse pour cuisson
+        dejeuner.push({ nom: 'huile d\'olive', quantite: 10 });
 
-        menus[jour]["Dîner"] = [
-            {nom: proteineDin, quantite: Math.round(ALIMENTS[proteineDin].quantite * 0.8)}
-        ];
+        // Vin (optionnel)
+        dejeuner.push({ nom: 'vin_rouge', quantite: 125 });
 
-        if (legumeDin1) {
-            menus[jour]["Dîner"].push({
-                nom: legumeDin1, 
-                quantite: ALIMENTS[legumeDin1].quantite
-            });
-        }
+        menus[jour]["Déjeuner"] = dejeuner;
 
-        if (legumeDin2 && legumeDin2 !== legumeDin1) {
-            menus[jour]["Dîner"].push({
-                nom: legumeDin2, 
-                quantite: ALIMENTS[legumeDin2].quantite
-            });
-        }
+        // ========== DÎNER (650 kcal) ==========
+        const diner = [];
 
+        // Protéine (195 kcal - 30%)
+        const proteineDin = selectionnerAliment(
+            [...cats.proteines_maigres, ...cats.proteines_grasses],
+            historique.proteines,
+            alimentsPrioritaires
+        );
+        diner.push({ nom: proteineDin, quantite: ajusterQuantite(proteineDin, 195) });
+        historique.proteines.push(proteineDin);
+
+        // Légumes (325 kcal - 50%)
+        const legume1Din = selectionnerAliment(
+            [...cats.legumes_verts, ...cats.legumes_colores],
+            historique.legumes,
+            alimentsPrioritaires
+        );
+        const legume2Din = selectionnerAliment(
+            [...cats.legumes_verts, ...cats.legumes_colores],
+            [...historique.legumes, legume1Din],
+            alimentsPrioritaires
+        );
+        const legume3Din = selectionnerAliment(
+            [...cats.legumes_verts, ...cats.legumes_colores],
+            [...historique.legumes, legume1Din, legume2Din],
+            alimentsPrioritaires
+        );
+        diner.push({ nom: legume1Din, quantite: ajusterQuantite(legume1Din, 110) });
+        diner.push({ nom: legume2Din, quantite: ajusterQuantite(legume2Din, 110) });
+        diner.push({ nom: legume3Din, quantite: ajusterQuantite(legume3Din, 105) });
+        historique.legumes.push(legume1Din, legume2Din, legume3Din);
+
+        // Féculent léger (98 kcal - 15%)
+        const feculentDin = selectionnerAliment(
+            [...cats.feculents_complets],
+            historique.feculents,
+            alimentsPrioritaires
+        );
+        diner.push({ nom: feculentDin, quantite: ajusterQuantite(feculentDin, 98) });
+        historique.feculents.push(feculentDin);
+
+        // Fruit (32 kcal - 5%)
+        const fruitDin = selectionnerAliment(cats.fruits_frais, historique.fruits, alimentsPrioritaires);
         if (fruitDin) {
-            menus[jour]["Dîner"].push({
-                nom: fruitDin, 
-                quantite: ALIMENTS[fruitDin].quantite
-            });
+            diner.push({ nom: fruitDin, quantite: ajusterQuantite(fruitDin, 32) });
+            historique.fruits.push(fruitDin);
         }
 
-        // Réinitialisation partielle tous les 3 jours
-        if ((indexJour + 1) % 3 === 0) {
-            alimentsUtilises.proteines = [];
-            alimentsUtilises.feculents = [];
-            alimentsUtilises.legumes = [];
+        menus[jour]["Dîner"] = diner;
+
+        // Rotation tous les 2 jours
+        if ((index + 1) % 2 === 0) {
+            historique.proteines = [];
+            historique.feculents = [];
+            historique.legumes = [];
+            historique.fruits = [];
         }
     });
 
- // ========== CALCUL DES CALORIES ET AJUSTEMENT AVEC PAIN + JUS + VIN ==========
-const caloriesMin = 1200;
-const caloriesMax = 1450;
-const margeMin = 250;
-const margeMax = 350;
-const caloriesPainPar30g = 80;       // 80 kcal pour 30g de pain complet
-const caloriesJusPomme100ml = 46;    // 46 kcal pour 100ml de jus de pomme
-const caloriesVinRouge = 77;         // 77 kcal pour 125ml de vin rouge
-const caloriesVinBlanc = 88;         // 88 kcal pour 125ml de vin blanc
-const PAIN_MAX_PAR_REPAS = 30;       // Limite stricte : 30g max par repas
-const JUS_MAX_PAR_REPAS = 100;       // Limite stricte : 100ml max par repas
-
-JOURS.forEach(jour => {
-    // Petit-déjeuner fixe (café + pain 50g + beurre)
-    const caloriesPetitDej = 2 + 124 + 72; // = 198 kcal
-
-    // ========== AJOUT AUTOMATIQUE DU VIN AU DÉJEUNER ==========
-    menus[jour]["Déjeuner"].push({
-        nom: "vin_rouge",
-        quantite: 125
-    });
-    menus[jour]["Déjeuner"].push({
-        nom: "vin_blanc",
-        quantite: 125
-    });
-
-    // Recalculer après ajout du vin
-    const caloriesDejeuner = calculerCaloriesRepas(menus[jour]["Déjeuner"]);
-    const caloriesDiner = calculerCaloriesRepas(menus[jour]["Dîner"]);
-
-    // Total actuel
-    let totalSansMarge = caloriesPetitDej + caloriesDejeuner + caloriesDiner;
-    let deficit = caloriesMin - totalSansMarge;
-
-    console.log(`📊 ${jour} - Calories: ${totalSansMarge} kcal | Déficit: ${deficit} kcal`);
-
-    // ========== COMPLÉMENT INTELLIGENT SI DÉFICIT ==========
-    if (deficit > 0) {
-        let deficitRestant = deficit;
-
-        // 1️⃣ Pain au DÉJEUNER (max 30g)
-        if (deficitRestant > 0) {
-            const painDejQuantite = Math.min(PAIN_MAX_PAR_REPAS, Math.ceil(deficitRestant / caloriesPainPar30g) * 30);
-            if (painDejQuantite > 0) {
-                menus[jour]["Déjeuner"].push({
-                    nom: "pain complet",
-                    quantite: painDejQuantite
-                });
-                const caloriesAjoutees = Math.round((painDejQuantite / 30) * caloriesPainPar30g);
-                deficitRestant -= caloriesAjoutees;
-                console.log(`  ➕ Pain déjeuner: ${painDejQuantite}g (${caloriesAjoutees} kcal)`);
-            }
-        }
-
-        // 2️⃣ Pain au DÎNER (max 30g)
-        if (deficitRestant > 0) {
-            const painDinQuantite = Math.min(PAIN_MAX_PAR_REPAS, Math.ceil(deficitRestant / caloriesPainPar30g) * 30);
-            if (painDinQuantite > 0) {
-                menus[jour]["Dîner"].push({
-                    nom: "pain complet",
-                    quantite: painDinQuantite
-                });
-                const caloriesAjoutees = Math.round((painDinQuantite / 30) * caloriesPainPar30g);
-                deficitRestant -= caloriesAjoutees;
-                console.log(`  ➕ Pain dîner: ${painDinQuantite}g (${caloriesAjoutees} kcal)`);
-            }
-        }
-
-        // 3️⃣ Jus de pomme (max 100ml/repas)
-        if (deficitRestant > 0) {
-            const portions100ml = Math.ceil(deficitRestant / caloriesJusPomme100ml);
-            const totalJusNecessaire = Math.min(portions100ml * 100, 200); // Max 200ml au total
-
-            const jusDej = Math.min(JUS_MAX_PAR_REPAS, Math.ceil(totalJusNecessaire / 2));
-            const jusDin = Math.min(JUS_MAX_PAR_REPAS, totalJusNecessaire - jusDej);
-
-            if (jusDej > 0) {
-                menus[jour]["Déjeuner"].push({
-                    nom: "jus de pomme",
-                    quantite: jusDej
-                });
-                console.log(`  ➕ Jus déjeuner: ${jusDej}ml`);
-            }
-
-            if (jusDin > 0) {
-                menus[jour]["Dîner"].push({
-                    nom: "jus de pomme",
-                    quantite: jusDin
-                });
-                console.log(`  ➕ Jus dîner: ${jusDin}ml`);
-            }
-
-            deficitRestant -= (jusDej + jusDin) * (caloriesJusPomme100ml / 100);
-        }
-
-        // Recalculer le total final
-        totalSansMarge = caloriesPetitDej + 
-                       calculerCaloriesRepas(menus[jour]["Déjeuner"]) + 
-                       calculerCaloriesRepas(menus[jour]["Dîner"]);
-    }
-
-    // ========== MARGE POUR DESSERTS/BOISSONS ==========
-    const marge = Math.max(margeMin, Math.min(margeMax, caloriesMax - totalSansMarge));
-    menus[jour]["Marge"] = {
-        description: `Marge pour desserts, boissons ou petits plaisirs : ${marge} kcal.`,
-        calories: marge
-    };
-
-    console.log(`  🍷 Vin ajouté: rouge (${caloriesVinRouge} kcal) + blanc (${caloriesVinBlanc} kcal) = ${caloriesVinRouge + caloriesVinBlanc} kcal`);
-    console.log(`  ✅ Total final: ${totalSansMarge} kcal | Marge: ${marge} kcal`);
-});
-    // 6️⃣ AFFICHAGE ET SAUVEGARDE
     afficherCalendrier();
     sauvegarderDansLocalStorage();
 
     const totalSemaine = calculerTotalSemaine();
     const moyenne = Math.round(totalSemaine / 7);
     
-    alert(`✅ Menu "Envies" généré avec succès ! 💖\n\n📊 Total semaine : ${totalSemaine} kcal\n📈 Moyenne/jour : ${moyenne} kcal\n\n💡 Basé sur vos ${envies.length} aliments favoris !\n\nMarge de 250–350 kcal/jour prévue pour desserts et boissons.`);
+    alert(`✅ Menu équilibré généré avec succès !\n\n` +
+          `📊 Total semaine : ${totalSemaine} kcal\n` +
+          `📈 Moyenne/jour : ${moyenne} kcal\n\n` +
+          `🎯 Objectif : ~1750 kcal/jour + 250 kcal de marge\n` +
+          `💡 Menus équilibrés en protéines, glucides, fibres et vitamines`);
+}
+
+// ========================================
+// FONCTION : MENU ENVIES AMÉLIORÉ
+// ========================================
+function genererMenuEnvies() {
+    if (!envies || envies.length === 0) {
+        alert("⚠️ Votre liste d'envies est vide !\n\nAjoutez des aliments dans 'Mes Envies' avant de générer un menu.");
+        return;
+    }
+
+    if (!confirm('⚠️ Cela va remplacer tous vos menus actuels. Continuer ?')) {
+        return;
+    }
+
+    console.log("💖 Génération d'un menu basé sur vos envies...");
+
+    // Catégoriser les envies
+    const cats = categoriserAliments();
+    const enviesParCategorie = {
+        proteines: envies.filter(e => 
+            cats.proteines_maigres.includes(e) || cats.proteines_grasses.includes(e)
+        ),
+        feculents: envies.filter(e => 
+            cats.feculents_complets.includes(e) || cats.feculents_raffines.includes(e)
+        ),
+        legumes: envies.filter(e => 
+            cats.legumes_verts.includes(e) || cats.legumes_colores.includes(e)
+        ),
+        fruits: envies.filter(e => cats.fruits_frais.includes(e))
+    };
+
+    // Vérification minimale
+    if (enviesParCategorie.proteines.length === 0) {
+        alert("⚠️ Ajoutez au moins une protéine (viande, poisson, œuf) dans vos envies !");
+        return;
+    }
+
+    const historique = { proteines: [], feculents: [], legumes: [], fruits: [] };
+
+    JOURS.forEach((jour, index) => {
+        // Structure identique au menu équilibré mais avec priorité aux envies
+        const petitDej = [
+            { nom: 'pain complet', quantite: 60 },
+            { nom: 'beurre', quantite: 15 },
+            { nom: 'yaourt nature', quantite: 125 },
+            { nom: 'café', quantite: 200 }
+        ];
+
+        // Si fruit dans les envies, on l'ajoute
+        const fruitPD = selectionnerAliment(enviesParCategorie.fruits, historique.fruits, envies);
+        if (fruitPD) {
+            petitDej.push({ nom: fruitPD, quantite: ajusterQuantite(fruitPD, 40) });
+            historique.fruits.push(fruitPD);
+        }
+
+        menus[jour]["Petit déjeuner"] = petitDej;
+
+        // Déjeuner avec envies
+        const dejeuner = [];
+        
+        const proteineDej = selectionnerAliment(enviesParCategorie.proteines, historique.proteines, envies);
+        const feculentDej = selectionnerAliment(enviesParCategorie.feculents, historique.feculents, envies);
+        const legume1Dej = selectionnerAliment(enviesParCategorie.legumes, historique.legumes, envies);
+        const legume2Dej = selectionnerAliment(enviesParCategorie.legumes, [...historique.legumes, legume1Dej], envies);
+        const fruitDej = selectionnerAliment(enviesParCategorie.fruits, historique.fruits, envies);
+
+        if (proteineDej) {
+            dejeuner.push({ nom: proteineDej, quantite: ajusterQuantite(proteineDej, 245) });
+            historique.proteines.push(proteineDej);
+        }
+        if (feculentDej) {
+            dejeuner.push({ nom: feculentDej, quantite: ajusterQuantite(feculentDej, 210) });
+            historique.feculents.push(feculentDej);
+        }
+        if (legume1Dej) {
+            dejeuner.push({ nom: legume1Dej, quantite: ajusterQuantite(legume1Dej, 90) });
+            historique.legumes.push(legume1Dej);
+        }
+        if (legume2Dej) {
+            dejeuner.push({ nom: legume2Dej, quantite: ajusterQuantite(legume2Dej, 85) });
+            historique.legumes.push(legume2Dej);
+        }
+        if (fruitDej) {
+            dejeuner.push({ nom: fruitDej, quantite: ajusterQuantite(fruitDej, 70) });
+            historique.fruits.push(fruitDej);
+        }
+
+        dejeuner.push({ nom: 'huile d\'olive', quantite: 10 });
+        dejeuner.push({ nom: 'vin_rouge', quantite: 125 });
+
+        menus[jour]["Déjeuner"] = dejeuner;
+
+        // Dîner similaire
+        const diner = [];
+        
+        const proteineDin = selectionnerAliment(enviesParCategorie.proteines, historique.proteines, envies);
+        const legume1Din = selectionnerAliment(enviesParCategorie.legumes, historique.legumes, envies);
+        const legume2Din = selectionnerAliment(enviesParCategorie.legumes, [...historique.legumes, legume1Din], envies);
+        const feculentDin = selectionnerAliment(enviesParCategorie.feculents, historique.feculents, envies);
+        const fruitDin = selectionnerAliment(enviesParCategorie.fruits, historique.fruits, envies);
+
+        if (proteineDin) {
+            diner.push({ nom: proteineDin, quantite: ajusterQuantite(proteineDin, 195) });
+            historique.proteines.push(proteineDin);
+        }
+        if (legume1Din) {
+            diner.push({ nom: legume1Din, quantite: ajusterQuantite(legume1Din, 150) });
+            historique.legumes.push(legume1Din);
+        }
+        if (legume2Din) {
+            diner.push({ nom: legume2Din, quantite: ajusterQuantite(legume2Din, 150) });
+            historique.legumes.push(legume2Din);
+        }
+        if (feculentDin) {
+            diner.push({ nom: feculentDin, quantite: ajusterQuantite(feculentDin, 98) });
+            historique.feculents.push(feculentDin);
+        }
+        if (fruitDin) {
+            diner.push({ nom: fruitDin, quantite: ajusterQuantite(fruitDin, 32) });
+            historique.fruits.push(fruitDin);
+        }
+
+        menus[jour]["Dîner"] = diner;
+
+        // Rotation
+        if ((index + 1) % 2 === 0) {
+            historique.proteines = [];
+            historique.feculents = [];
+            historique.legumes = [];
+            historique.fruits = [];
+        }
+    });
+
+    afficherCalendrier();
+    sauvegarderDansLocalStorage();
+
+    const totalSemaine = calculerTotalSemaine();
+    const moyenne = Math.round(totalSemaine / 7);
+    
+    alert(`✅ Menu "Envies" généré avec succès ! 💖\n\n` +
+          `📊 Total semaine : ${totalSemaine} kcal\n` +
+          `📈 Moyenne/jour : ${moyenne} kcal\n\n` +
+          `💡 Basé sur vos ${envies.length} aliments favoris !\n` +
+          `🎯 Objectif : ~1750 kcal/jour + 250 kcal de marge`);
 }
 	   function suggererRecette(jour, repas) {
             const ingredients = menus[jour][repas].map(item => item.nom);
