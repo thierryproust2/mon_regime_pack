@@ -1847,6 +1847,160 @@ function ajusterQuantite(nom, caloriesVisees) {
     // Limiter à des quantités réalistes (min 20g/20ml, max 300g/300ml)
     return Math.max(20, Math.min(300, quantiteAjustee));
 }
+// ========================================
+// GÉNÉRATION DE MENUS ÉQUILIBRÉS - VERSION AMÉLIORÉE
+// Objectif : 2000 kcal/jour (1750 repas + 250 marge plaisirs)
+// ========================================
+
+// Objectifs caloriques par repas
+const OBJECTIFS_CALO = {
+    PETIT_DEJ: 350,    // Fixe : café + pain + beurre
+    DEJEUNER: 750,     // 43% du total
+    DINER: 650,        // 37% du total
+    MARGE: 250         // Pour desserts/boissons/plaisirs
+};
+
+// Répartition nutritionnelle optimale
+const REPARTITION_NUTRITIONNELLE = {
+    DEJEUNER: {
+        proteines: 0.35,   // 35% = ~260 kcal protéines
+        feculents: 0.30,   // 30% = ~225 kcal féculents
+        legumes: 0.25,     // 25% = ~190 kcal légumes
+        fruits: 0.10       // 10% = ~75 kcal fruits
+    },
+    DINER: {
+        proteines: 0.30,   // 30% = ~195 kcal protéines (moins qu'au déjeuner)
+        legumes: 0.50,     // 50% = ~325 kcal légumes (beaucoup plus)
+        feculents: 0.15,   // 15% = ~98 kcal féculents (réduit le soir)
+        fruits: 0.05       // 5% = ~33 kcal fruits
+    }
+};
+
+// ========================================
+// CATÉGORISATION AVANCÉE DES ALIMENTS
+// ========================================
+function categoriserAlimentsAvance() {
+    const categories = {
+        proteines_maigres: [],      // < 150 kcal/portion
+        proteines_moderees: [],     // 150-200 kcal
+        proteines_riches: [],       // > 200 kcal
+        feculents_complets: [],     // Complets, quinoa, etc.
+        feculents_classiques: [],   // Riz blanc, pâtes, pain
+        legumes_verts: [],          // Épinards, brocoli, haricots verts
+        legumes_varies: [],         // Tomates, courgettes, aubergines
+        legumes_racines: [],        // Carottes, betteraves
+        fruits_legers: [],          // < 60 kcal
+        fruits_moyens: [],          // 60-90 kcal
+        produits_laitiers: [],
+        matieres_grasses: []
+    };
+
+    Object.entries(ALIMENTS).forEach(([nom, data]) => {
+        const cat = data.categorie;
+        const cal = data.calories;
+
+        // Catégorisation des protéines selon calories
+        if (['Viandes', 'Poissons', 'Œufs', 'Protéines végétales'].includes(cat)) {
+            if (cal < 150) {
+                categories.proteines_maigres.push(nom);
+            } else if (cal < 200) {
+                categories.proteines_moderees.push(nom);
+            } else {
+                categories.proteines_riches.push(nom);
+            }
+        }
+        
+        // Féculents
+        if (cat === 'Féculents / Céréales') {
+            if (nom.includes('complet') || ['quinoa', 'épeautre', 'riz complet', 'pâtes complètes'].includes(nom)) {
+                categories.feculents_complets.push(nom);
+            } else {
+                categories.feculents_classiques.push(nom);
+            }
+        }
+
+        // Légumes par type
+        if (cat === 'Légumes') {
+            if (['épinards', 'brocoli', 'haricot vert', 'courgette', 'asperge', 'céleri branche'].includes(nom)) {
+                categories.legumes_verts.push(nom);
+            } else if (['carotte', 'betterave', 'panais', 'radis'].includes(nom)) {
+                categories.legumes_racines.push(nom);
+            } else {
+                categories.legumes_varies.push(nom);
+            }
+        }
+
+        // Fruits
+        if (cat === 'Fruits') {
+            if (cal < 60) {
+                categories.fruits_legers.push(nom);
+            } else {
+                categories.fruits_moyens.push(nom);
+            }
+        }
+
+        // Produits laitiers et matières grasses
+        if (cat === 'Produits laitiers') categories.produits_laitiers.push(nom);
+        if (cat === 'Matières grasses') categories.matieres_grasses.push(nom);
+    });
+
+    return categories;
+}
+
+// ========================================
+// SÉLECTION INTELLIGENTE AVEC PRIORITÉS
+// ========================================
+function selectionnerAlimentIntelligent(listes, dejaPris, prioritaires) {
+    // Essayer plusieurs listes dans l'ordre de priorité
+    for (const liste of listes) {
+        if (!liste || liste.length === 0) continue;
+        
+        // Filtrer les déjà utilisés
+        let disponibles = liste.filter(a => !dejaPris.includes(a));
+        if (disponibles.length === 0) disponibles = [...liste];
+        
+        // Priorité 1 : Stock et envies
+        const prioritairesDisponibles = disponibles.filter(a => prioritaires.includes(a));
+        if (prioritairesDisponibles.length > 0) {
+            return prioritairesDisponibles[Math.floor(Math.random() * prioritairesDisponibles.length)];
+        }
+        
+        // Priorité 2 : Aléatoire dans la liste
+        if (disponibles.length > 0) {
+            return disponibles[Math.floor(Math.random() * disponibles.length)];
+        }
+    }
+    
+    return null;
+}
+
+// ========================================
+// CALCUL ET AJUSTEMENT DE QUANTITÉS
+// ========================================
+function ajusterQuantitePrecise(nom, caloriesVisees) {
+    const aliment = ALIMENTS[nom];
+    if (!aliment) return 100;
+    
+    // Calcul de la quantité nécessaire
+    const ratio = caloriesVisees / aliment.calories;
+    let quantiteAjustee = Math.round(aliment.quantite * ratio);
+    
+    // Limites réalistes selon le type d'aliment
+    const cat = aliment.categorie;
+    if (cat === 'Matières grasses') {
+        quantiteAjustee = Math.max(5, Math.min(20, quantiteAjustee));
+    } else if (cat === 'Aromates / Épices') {
+        quantiteAjustee = Math.max(1, Math.min(10, quantiteAjustee));
+    } else if (['Viandes', 'Poissons'].includes(cat)) {
+        quantiteAjustee = Math.max(80, Math.min(200, quantiteAjustee));
+    } else if (cat === 'Légumes') {
+        quantiteAjustee = Math.max(80, Math.min(250, quantiteAjustee));
+    } else {
+        quantiteAjustee = Math.max(30, Math.min(200, quantiteAjustee));
+    }
+    
+    return quantiteAjustee;
+}
 
 // ========================================
 // FONCTION PRINCIPALE : MENU ÉQUILIBRÉ
@@ -1858,8 +2012,10 @@ function genererMenuEquilibre() {
 
     console.log("🎲 Génération d'un menu équilibré nutritionnellement...");
 
-    const cats = categoriserAliments();
-    const alimentsPrioritaires = [...Object.keys(stock), ...envies];
+    const cats = categoriserAlimentsAvance();
+    const prioritaires = [...Object.keys(stock), ...envies];
+    
+    // Historique pour rotation des aliments
     const historique = {
         proteines: [],
         feculents: [],
@@ -1867,153 +2023,183 @@ function genererMenuEquilibre() {
         fruits: []
     };
 
-    JOURS.forEach((jour, index) => {
+    JOURS.forEach((jour, indexJour) => {
         console.log(`\n📅 ${jour}`);
 
-        // ========== PETIT DÉJEUNER (400 kcal) ==========
-        const petitDej = [];
+        // ========== PETIT DÉJEUNER FIXE (350 kcal) ==========
+        menus[jour]["Petit déjeuner"] = [
+            { nom: 'café', quantite: 200 },          // ~4 kcal
+            { nom: 'pain complet', quantite: 60 },   // ~150 kcal
+            { nom: 'beurre', quantite: 20 },         // ~144 kcal
+            { nom: 'confiture', quantite: 20 }       // ~50 kcal
+        ];
+        // Total : ~348 kcal
+
+        // ========== DÉJEUNER (750 kcal) ==========
+        const dejeuner = [];
         
-        // Féculent (240 kcal - 60%)
-        const feculent1 = selectionnerAliment(
-            [...cats.feculents_complets, 'pain complet', 'pain de seigle', 'flocons d\'avoine'],
-            historique.feculents,
-            alimentsPrioritaires
+        // 1️⃣ Protéine (260 kcal - 35%)
+        const proteineDej = selectionnerAlimentIntelligent(
+            [cats.proteines_maigres, cats.proteines_moderees, cats.proteines_riches],
+            historique.proteines,
+            prioritaires
         );
-        petitDej.push({ nom: feculent1, quantite: ajusterQuantite(feculent1, 240) });
-        historique.feculents.push(feculent1);
-
-        // Protéine (60 kcal - 15%)
-        const proteinePD = selectionnerAliment(
-            [...cats.produits_laitiers, 'œuf'],
-            [],
-            alimentsPrioritaires
-        );
-        petitDej.push({ nom: proteinePD, quantite: ajusterQuantite(proteinePD, 60) });
-
-        // Matière grasse (60 kcal - 15%)
-        const matiereGrasse = selectionnerAliment(
-            ['beurre', 'beurre de cacahuète', 'huile d\'olive'],
-            [],
-            alimentsPrioritaires
-        );
-        petitDej.push({ nom: matiereGrasse, quantite: ajusterQuantite(matiereGrasse, 60) });
-
-        // Fruit (40 kcal - 10%)
-        const fruitPD = selectionnerAliment(cats.fruits_frais, historique.fruits, alimentsPrioritaires);
-        if (fruitPD) {
-            petitDej.push({ nom: fruitPD, quantite: ajusterQuantite(fruitPD, 40) });
-            historique.fruits.push(fruitPD);
+        if (proteineDej) {
+            dejeuner.push({ 
+                nom: proteineDej, 
+                quantite: ajusterQuantitePrecise(proteineDej, 260) 
+            });
+            historique.proteines.push(proteineDej);
         }
 
-        // Boisson
-        petitDej.push({ nom: 'café', quantite: 200 });
-
-        menus[jour]["Petit déjeuner"] = petitDej;
-
-        // ========== DÉJEUNER (700 kcal) ==========
-        const dejeuner = [];
-
-        // Protéine (245 kcal - 35%)
-        const proteineDej = selectionnerAliment(
-            [...cats.proteines_maigres, ...cats.proteines_grasses],
-            historique.proteines,
-            alimentsPrioritaires
-        );
-        dejeuner.push({ nom: proteineDej, quantite: ajusterQuantite(proteineDej, 245) });
-        historique.proteines.push(proteineDej);
-
-        // Féculent (210 kcal - 30%)
-        const feculentDej = selectionnerAliment(
-            [...cats.feculents_complets, ...cats.feculents_raffines],
+        // 2️⃣ Féculent (225 kcal - 30%)
+        const feculentDej = selectionnerAlimentIntelligent(
+            [cats.feculents_complets, cats.feculents_classiques],
             historique.feculents,
-            alimentsPrioritaires
+            prioritaires
         );
-        dejeuner.push({ nom: feculentDej, quantite: ajusterQuantite(feculentDej, 210) });
-        historique.feculents.push(feculentDej);
+        if (feculentDej) {
+            dejeuner.push({ 
+                nom: feculentDej, 
+                quantite: ajusterQuantitePrecise(feculentDej, 225) 
+            });
+            historique.feculents.push(feculentDej);
+        }
 
-        // Légumes (175 kcal - 25%)
-        const legume1Dej = selectionnerAliment(
-            [...cats.legumes_verts, ...cats.legumes_colores],
+        // 3️⃣ Légumes (190 kcal - 25%) - 2 variétés
+        const legume1Dej = selectionnerAlimentIntelligent(
+            [cats.legumes_verts, cats.legumes_varies, cats.legumes_racines],
             historique.legumes,
-            alimentsPrioritaires
+            prioritaires
         );
-        const legume2Dej = selectionnerAliment(
-            [...cats.legumes_verts, ...cats.legumes_colores],
+        const legume2Dej = selectionnerAlimentIntelligent(
+            [cats.legumes_verts, cats.legumes_varies, cats.legumes_racines],
             [...historique.legumes, legume1Dej],
-            alimentsPrioritaires
+            prioritaires
         );
-        dejeuner.push({ nom: legume1Dej, quantite: ajusterQuantite(legume1Dej, 90) });
-        dejeuner.push({ nom: legume2Dej, quantite: ajusterQuantite(legume2Dej, 85) });
-        historique.legumes.push(legume1Dej, legume2Dej);
+        
+        if (legume1Dej) {
+            dejeuner.push({ 
+                nom: legume1Dej, 
+                quantite: ajusterQuantitePrecise(legume1Dej, 95) 
+            });
+            historique.legumes.push(legume1Dej);
+        }
+        if (legume2Dej) {
+            dejeuner.push({ 
+                nom: legume2Dej, 
+                quantite: ajusterQuantitePrecise(legume2Dej, 95) 
+            });
+            historique.legumes.push(legume2Dej);
+        }
 
-        // Fruit (70 kcal - 10%)
-        const fruitDej = selectionnerAliment(cats.fruits_frais, historique.fruits, alimentsPrioritaires);
+        // 4️⃣ Fruit (75 kcal - 10%)
+        const fruitDej = selectionnerAlimentIntelligent(
+            [cats.fruits_legers, cats.fruits_moyens],
+            historique.fruits,
+            prioritaires
+        );
         if (fruitDej) {
-            dejeuner.push({ nom: fruitDej, quantite: ajusterQuantite(fruitDej, 70) });
+            dejeuner.push({ 
+                nom: fruitDej, 
+                quantite: ajusterQuantitePrecise(fruitDej, 75) 
+            });
             historique.fruits.push(fruitDej);
         }
 
-        // Matière grasse pour cuisson
-        dejeuner.push({ nom: 'huile d\'olive', quantite: 10 });
-
-        // Vin (optionnel)
-        dejeuner.push({ nom: 'vin_rouge', quantite: 125 });
+        // 5️⃣ Matière grasse pour cuisson
+        dejeuner.push({ nom: 'huile d\'olive', quantite: 10 }); // ~90 kcal
 
         menus[jour]["Déjeuner"] = dejeuner;
 
         // ========== DÎNER (650 kcal) ==========
         const diner = [];
 
-        // Protéine (195 kcal - 30%)
-        const proteineDin = selectionnerAliment(
-            [...cats.proteines_maigres, ...cats.proteines_grasses],
+        // 1️⃣ Protéine légère (195 kcal - 30%)
+        const proteineDin = selectionnerAlimentIntelligent(
+            [cats.proteines_maigres, cats.proteines_moderees],
             historique.proteines,
-            alimentsPrioritaires
+            prioritaires
         );
-        diner.push({ nom: proteineDin, quantite: ajusterQuantite(proteineDin, 195) });
-        historique.proteines.push(proteineDin);
+        if (proteineDin) {
+            diner.push({ 
+                nom: proteineDin, 
+                quantite: ajusterQuantitePrecise(proteineDin, 195) 
+            });
+            historique.proteines.push(proteineDin);
+        }
 
-        // Légumes (325 kcal - 50%)
-        const legume1Din = selectionnerAliment(
-            [...cats.legumes_verts, ...cats.legumes_colores],
+        // 2️⃣ Légumes abondants (325 kcal - 50%) - 3 variétés
+        const legume1Din = selectionnerAlimentIntelligent(
+            [cats.legumes_verts, cats.legumes_varies],
             historique.legumes,
-            alimentsPrioritaires
+            prioritaires
         );
-        const legume2Din = selectionnerAliment(
-            [...cats.legumes_verts, ...cats.legumes_colores],
+        const legume2Din = selectionnerAlimentIntelligent(
+            [cats.legumes_verts, cats.legumes_varies, cats.legumes_racines],
             [...historique.legumes, legume1Din],
-            alimentsPrioritaires
+            prioritaires
         );
-        const legume3Din = selectionnerAliment(
-            [...cats.legumes_verts, ...cats.legumes_colores],
+        const legume3Din = selectionnerAlimentIntelligent(
+            [cats.legumes_verts, cats.legumes_varies],
             [...historique.legumes, legume1Din, legume2Din],
-            alimentsPrioritaires
+            prioritaires
         );
-        diner.push({ nom: legume1Din, quantite: ajusterQuantite(legume1Din, 110) });
-        diner.push({ nom: legume2Din, quantite: ajusterQuantite(legume2Din, 110) });
-        diner.push({ nom: legume3Din, quantite: ajusterQuantite(legume3Din, 105) });
-        historique.legumes.push(legume1Din, legume2Din, legume3Din);
 
-        // Féculent léger (98 kcal - 15%)
-        const feculentDin = selectionnerAliment(
-            [...cats.feculents_complets],
+        if (legume1Din) {
+            diner.push({ 
+                nom: legume1Din, 
+                quantite: ajusterQuantitePrecise(legume1Din, 110) 
+            });
+            historique.legumes.push(legume1Din);
+        }
+        if (legume2Din) {
+            diner.push({ 
+                nom: legume2Din, 
+                quantite: ajusterQuantitePrecise(legume2Din, 110) 
+            });
+            historique.legumes.push(legume2Din);
+        }
+        if (legume3Din) {
+            diner.push({ 
+                nom: legume3Din, 
+                quantite: ajusterQuantitePrecise(legume3Din, 105) 
+            });
+            historique.legumes.push(legume3Din);
+        }
+
+        // 3️⃣ Féculent léger (98 kcal - 15%)
+        const feculentDin = selectionnerAlimentIntelligent(
+            [cats.feculents_complets],
             historique.feculents,
-            alimentsPrioritaires
+            prioritaires
         );
-        diner.push({ nom: feculentDin, quantite: ajusterQuantite(feculentDin, 98) });
-        historique.feculents.push(feculentDin);
+        if (feculentDin) {
+            diner.push({ 
+                nom: feculentDin, 
+                quantite: ajusterQuantitePrecise(feculentDin, 98) 
+            });
+            historique.feculents.push(feculentDin);
+        }
 
-        // Fruit (32 kcal - 5%)
-        const fruitDin = selectionnerAliment(cats.fruits_frais, historique.fruits, alimentsPrioritaires);
+        // 4️⃣ Fruit léger (33 kcal - 5%)
+        const fruitDin = selectionnerAlimentIntelligent(
+            [cats.fruits_legers],
+            historique.fruits,
+            prioritaires
+        );
         if (fruitDin) {
-            diner.push({ nom: fruitDin, quantite: ajusterQuantite(fruitDin, 32) });
+            diner.push({ 
+                nom: fruitDin, 
+                quantite: ajusterQuantitePrecise(fruitDin, 33) 
+            });
             historique.fruits.push(fruitDin);
         }
 
         menus[jour]["Dîner"] = diner;
 
-        // Rotation tous les 2 jours
-        if ((index + 1) % 2 === 0) {
+        // Rotation tous les 2 jours pour varier
+        if ((indexJour + 1) % 2 === 0) {
             historique.proteines = [];
             historique.feculents = [];
             historique.legumes = [];
@@ -2027,11 +2213,16 @@ function genererMenuEquilibre() {
     const totalSemaine = calculerTotalSemaine();
     const moyenne = Math.round(totalSemaine / 7);
     
-    alert(`✅ Menu équilibré généré avec succès !\n\n` +
-          `📊 Total semaine : ${totalSemaine} kcal\n` +
-          `📈 Moyenne/jour : ${moyenne} kcal\n\n` +
-          `🎯 Objectif : ~1750 kcal/jour + 250 kcal de marge\n` +
-          `💡 Menus équilibrés en protéines, glucides, fibres et vitamines`);
+    alert(
+        `✅ Menu équilibré généré avec succès !\n\n` +
+        `📊 Total semaine : ${totalSemaine} kcal\n` +
+        `📈 Moyenne/jour : ${moyenne} kcal\n\n` +
+        `🎯 Objectif : ~1750 kcal/jour + 250 kcal de marge\n` +
+        `💡 Répartition optimisée :\n` +
+        `   • Petit-déj : 350 kcal (fixe)\n` +
+        `   • Déjeuner : 750 kcal (protéines + féculents + légumes)\n` +
+        `   • Dîner : 650 kcal (léger, riche en légumes)`
+    );
 }
 
 // ========================================
@@ -2043,122 +2234,169 @@ function genererMenuEnvies() {
         return;
     }
 
-    if (!confirm('⚠️ Cela va remplacer tous vos menus actuels. Continuer ?')) {
+    if (!confirm('⚠️ Cela va remplacer tous vos menus actuels par des menus basés sur vos envies. Continuer ?')) {
         return;
     }
 
     console.log("💖 Génération d'un menu basé sur vos envies...");
 
+    const cats = categoriserAlimentsAvance();
+    
     // Catégoriser les envies
-    const cats = categoriserAliments();
     const enviesParCategorie = {
         proteines: envies.filter(e => 
-            cats.proteines_maigres.includes(e) || cats.proteines_grasses.includes(e)
+            cats.proteines_maigres.includes(e) || 
+            cats.proteines_moderees.includes(e) || 
+            cats.proteines_riches.includes(e)
         ),
         feculents: envies.filter(e => 
-            cats.feculents_complets.includes(e) || cats.feculents_raffines.includes(e)
+            cats.feculents_complets.includes(e) || 
+            cats.feculents_classiques.includes(e)
         ),
         legumes: envies.filter(e => 
-            cats.legumes_verts.includes(e) || cats.legumes_colores.includes(e)
+            cats.legumes_verts.includes(e) || 
+            cats.legumes_varies.includes(e) || 
+            cats.legumes_racines.includes(e)
         ),
-        fruits: envies.filter(e => cats.fruits_frais.includes(e))
+        fruits: envies.filter(e => 
+            cats.fruits_legers.includes(e) || 
+            cats.fruits_moyens.includes(e)
+        )
     };
 
-    // Vérification minimale
+    // Vérification
     if (enviesParCategorie.proteines.length === 0) {
-        alert("⚠️ Ajoutez au moins une protéine (viande, poisson, œuf) dans vos envies !");
+        alert("⚠️ Ajoutez au moins une protéine (viande, poisson, œuf) dans vos envies pour générer un menu équilibré !");
         return;
     }
 
     const historique = { proteines: [], feculents: [], legumes: [], fruits: [] };
 
-    JOURS.forEach((jour, index) => {
-        // Structure identique au menu équilibré mais avec priorité aux envies
-        const petitDej = [
+    JOURS.forEach((jour, indexJour) => {
+        // Petit-déjeuner fixe identique
+        menus[jour]["Petit déjeuner"] = [
+            { nom: 'café', quantite: 200 },
             { nom: 'pain complet', quantite: 60 },
-            { nom: 'beurre', quantite: 15 },
-            { nom: 'yaourt nature', quantite: 125 },
-            { nom: 'café', quantite: 200 }
+            { nom: 'beurre', quantite: 20 },
+            { nom: 'confiture', quantite: 20 }
         ];
 
-        // Si fruit dans les envies, on l'ajoute
-        const fruitPD = selectionnerAliment(enviesParCategorie.fruits, historique.fruits, envies);
-        if (fruitPD) {
-            petitDej.push({ nom: fruitPD, quantite: ajusterQuantite(fruitPD, 40) });
-            historique.fruits.push(fruitPD);
-        }
-
-        menus[jour]["Petit déjeuner"] = petitDej;
-
-        // Déjeuner avec envies
+        // Déjeuner avec envies (structure identique)
         const dejeuner = [];
         
-        const proteineDej = selectionnerAliment(enviesParCategorie.proteines, historique.proteines, envies);
-        const feculentDej = selectionnerAliment(enviesParCategorie.feculents, historique.feculents, envies);
-        const legume1Dej = selectionnerAliment(enviesParCategorie.legumes, historique.legumes, envies);
-        const legume2Dej = selectionnerAliment(enviesParCategorie.legumes, [...historique.legumes, legume1Dej], envies);
-        const fruitDej = selectionnerAliment(enviesParCategorie.fruits, historique.fruits, envies);
+        const proteineDej = selectionnerAlimentIntelligent(
+            [enviesParCategorie.proteines],
+            historique.proteines,
+            envies
+        );
+        const feculentDej = selectionnerAlimentIntelligent(
+            [enviesParCategorie.feculents],
+            historique.feculents,
+            envies
+        );
+        const legume1Dej = selectionnerAlimentIntelligent(
+            [enviesParCategorie.legumes],
+            historique.legumes,
+            envies
+        );
+        const legume2Dej = selectionnerAlimentIntelligent(
+            [enviesParCategorie.legumes],
+            [...historique.legumes, legume1Dej],
+            envies
+        );
+        const fruitDej = selectionnerAlimentIntelligent(
+            [enviesParCategorie.fruits],
+            historique.fruits,
+            envies
+        );
 
         if (proteineDej) {
-            dejeuner.push({ nom: proteineDej, quantite: ajusterQuantite(proteineDej, 245) });
+            dejeuner.push({ nom: proteineDej, quantite: ajusterQuantitePrecise(proteineDej, 260) });
             historique.proteines.push(proteineDej);
         }
         if (feculentDej) {
-            dejeuner.push({ nom: feculentDej, quantite: ajusterQuantite(feculentDej, 210) });
+            dejeuner.push({ nom: feculentDej, quantite: ajusterQuantitePrecise(feculentDej, 225) });
             historique.feculents.push(feculentDej);
         }
         if (legume1Dej) {
-            dejeuner.push({ nom: legume1Dej, quantite: ajusterQuantite(legume1Dej, 90) });
+            dejeuner.push({ nom: legume1Dej, quantite: ajusterQuantitePrecise(legume1Dej, 95) });
             historique.legumes.push(legume1Dej);
         }
         if (legume2Dej) {
-            dejeuner.push({ nom: legume2Dej, quantite: ajusterQuantite(legume2Dej, 85) });
+            dejeuner.push({ nom: legume2Dej, quantite: ajusterQuantitePrecise(legume2Dej, 95) });
             historique.legumes.push(legume2Dej);
         }
         if (fruitDej) {
-            dejeuner.push({ nom: fruitDej, quantite: ajusterQuantite(fruitDej, 70) });
+            dejeuner.push({ nom: fruitDej, quantite: ajusterQuantitePrecise(fruitDej, 75) });
             historique.fruits.push(fruitDej);
         }
 
         dejeuner.push({ nom: 'huile d\'olive', quantite: 10 });
-        dejeuner.push({ nom: 'vin_rouge', quantite: 125 });
-
         menus[jour]["Déjeuner"] = dejeuner;
 
         // Dîner similaire
         const diner = [];
         
-        const proteineDin = selectionnerAliment(enviesParCategorie.proteines, historique.proteines, envies);
-        const legume1Din = selectionnerAliment(enviesParCategorie.legumes, historique.legumes, envies);
-        const legume2Din = selectionnerAliment(enviesParCategorie.legumes, [...historique.legumes, legume1Din], envies);
-        const feculentDin = selectionnerAliment(enviesParCategorie.feculents, historique.feculents, envies);
-        const fruitDin = selectionnerAliment(enviesParCategorie.fruits, historique.fruits, envies);
+        const proteineDin = selectionnerAlimentIntelligent(
+            [enviesParCategorie.proteines],
+            historique.proteines,
+            envies
+        );
+        const legume1Din = selectionnerAlimentIntelligent(
+            [enviesParCategorie.legumes],
+            historique.legumes,
+            envies
+        );
+        const legume2Din = selectionnerAlimentIntelligent(
+            [enviesParCategorie.legumes],
+            [...historique.legumes, legume1Din],
+            envies
+        );
+        const legume3Din = selectionnerAlimentIntelligent(
+            [enviesParCategorie.legumes],
+            [...historique.legumes, legume1Din, legume2Din],
+            envies
+        );
+        const feculentDin = selectionnerAlimentIntelligent(
+            [enviesParCategorie.feculents],
+            historique.feculents,
+            envies
+        );
+        const fruitDin = selectionnerAlimentIntelligent(
+            [enviesParCategorie.fruits],
+            historique.fruits,
+            envies
+        );
 
         if (proteineDin) {
-            diner.push({ nom: proteineDin, quantite: ajusterQuantite(proteineDin, 195) });
+            diner.push({ nom: proteineDin, quantite: ajusterQuantitePrecise(proteineDin, 195) });
             historique.proteines.push(proteineDin);
         }
         if (legume1Din) {
-            diner.push({ nom: legume1Din, quantite: ajusterQuantite(legume1Din, 150) });
+            diner.push({ nom: legume1Din, quantite: ajusterQuantitePrecise(legume1Din, 110) });
             historique.legumes.push(legume1Din);
         }
         if (legume2Din) {
-            diner.push({ nom: legume2Din, quantite: ajusterQuantite(legume2Din, 150) });
+            diner.push({ nom: legume2Din, quantite: ajusterQuantitePrecise(legume2Din, 110) });
             historique.legumes.push(legume2Din);
         }
+        if (legume3Din) {
+            diner.push({ nom: legume3Din, quantite: ajusterQuantitePrecise(legume3Din, 105) });
+            historique.legumes.push(legume3Din);
+        }
         if (feculentDin) {
-            diner.push({ nom: feculentDin, quantite: ajusterQuantite(feculentDin, 98) });
+            diner.push({ nom: feculentDin, quantite: ajusterQuantitePrecise(feculentDin, 98) });
             historique.feculents.push(feculentDin);
         }
         if (fruitDin) {
-            diner.push({ nom: fruitDin, quantite: ajusterQuantite(fruitDin, 32) });
+            diner.push({ nom: fruitDin, quantite: ajusterQuantitePrecise(fruitDin, 33) });
             historique.fruits.push(fruitDin);
         }
 
         menus[jour]["Dîner"] = diner;
 
         // Rotation
-        if ((index + 1) % 2 === 0) {
+        if ((indexJour + 1) % 2 === 0) {
             historique.proteines = [];
             historique.feculents = [];
             historique.legumes = [];
@@ -2172,11 +2410,13 @@ function genererMenuEnvies() {
     const totalSemaine = calculerTotalSemaine();
     const moyenne = Math.round(totalSemaine / 7);
     
-    alert(`✅ Menu "Envies" généré avec succès ! 💖\n\n` +
-          `📊 Total semaine : ${totalSemaine} kcal\n` +
-          `📈 Moyenne/jour : ${moyenne} kcal\n\n` +
-          `💡 Basé sur vos ${envies.length} aliments favoris !\n` +
-          `🎯 Objectif : ~1750 kcal/jour + 250 kcal de marge`);
+    alert(
+        `✅ Menu "Envies" généré avec succès ! 💖\n\n` +
+        `📊 Total semaine : ${totalSemaine} kcal\n` +
+        `📈 Moyenne/jour : ${moyenne} kcal\n\n` +
+        `💡 Basé sur vos ${envies.length} aliments favoris !\n` +
+        `🎯 Structure équilibrée maintenue avec vos envies prioritaires`
+    );
 }
 	   function suggererRecette(jour, repas) {
             const ingredients = menus[jour][repas].map(item => item.nom);
